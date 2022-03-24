@@ -1,7 +1,7 @@
 # MapGenieProUnlock
 Chrome extension that unlocks [Map Genie](https://mapgenie.io/) PRO features for free.<br>
-The extension is only tested on the [DL2 villedor Map](https://mapgenie.io/dying-light-2/maps/villedor) and [Eden Ring Map](https://mapgenie.io/elden-ring)
-and works fine so far. But I'm pretty sure it will work on other to.
+The extension is only tested on the [DL2 villedor Map](https://mapgenie.io/dying-light-2/maps/villedor) and [Elden Ring Map](https://mapgenie.io/elden-ring)
+and works fine so far. But I'm pretty sure it will work on other maps too.
 The extenions should work on both the map and the tools.<br>
 *NOTE: this is my first ever made chrome extenion so don't mind the some minor errors*
 
