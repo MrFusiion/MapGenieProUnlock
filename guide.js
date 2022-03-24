@@ -83,10 +83,10 @@ if (IS_GUIDE) {
         let c = 0;
         while (true) {
             await sleep(100);
-            if (mapFrameWindow.mapData !== undefined) {
+            if (mapFrameWindow.mapData !== undefined && mapFrameWindow.axios !== undefined) {
                 break;
             } else if (c > 100) {
-                IS_GUIDE = false;
+                console.error("Failed to find mapData!");
                 break;
             }
             c += 1;
@@ -95,13 +95,21 @@ if (IS_GUIDE) {
 
         window.isPro = true;
 
-        let putCallback = (s) => { let id = getId(s); storage.save(storage.TYPES.LOCATIONS, id); markInTable(id, true) }
-        window.axios.put = newFilter({ "/api/v1/user/locations": putCallback }, window.axios.put);
-        mapFrameWindow.axios.put = newFilter({ "/api/v1/user/locations": putCallback }, mapFrameWindow.axios.put);
+        try {
+            let putCallback = (s) => { let id = getId(s); storage.save(storage.TYPES.LOCATIONS, id); markInTable(id, true) }
+            window.axios.put = newFilter({ "/api/v1/user/locations": putCallback }, window.axios.put);
+            mapFrameWindow.axios.put = newFilter({ "/api/v1/user/locations": putCallback }, mapFrameWindow.axios.put);
+        } catch {
+            console.error("Chouldn't disable Put requests!");
+        }
 
-        let deleteCallback = (s) => { let id = getId(s); storage.remove(storage.TYPES.LOCATIONS, id); markInTable(id, false) }
-        window.axios.delete = newFilter({ "/api/v1/user/locations": deleteCallback }, window.axios.delete);
-        mapFrameWindow.axios.delete = newFilter({ "/api/v1/user/locations": deleteCallback }, mapFrameWindow.axios.delete);
+        try {
+            let deleteCallback = (s) => { let id = getId(s); storage.remove(storage.TYPES.LOCATIONS, id); markInTable(id, false) }
+            window.axios.delete = newFilter({ "/api/v1/user/locations": deleteCallback }, window.axios.delete);
+            mapFrameWindow.axios.delete = newFilter({ "/api/v1/user/locations": deleteCallback }, mapFrameWindow.axios.delete);
+        } catch {
+            console.error("Chouldn't disable Delete requests!");
+        }
 
         //Hide PRO Upgrade elements
         let selectors = ["#button-upgrade"];

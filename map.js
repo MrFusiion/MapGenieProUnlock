@@ -104,12 +104,28 @@ if (IS_MAP) {
         window.user.hasPro = true;
         window.mapData.maxMarkedLocations = Infinity;
 
-        axios.put = newFilter({"/api/v1/user/locations": (s) => { storage.save(storage.TYPES.LOCATIONS, getId(s)); }}, axios.put);
-        axios.post = newFilter({ "/api/v1/user/categories": (s, data) => { storage.save(storage.TYPES.CATEGORIES, data.category); }}, axios.post);
-        axios.delete = newFilter({
-            "/api/v1/user/locations": (s) => { storage.remove(storage.TYPES.LOCATIONS, getId(s)); },
-            "/api/v1/user/categories": (s) => { storage.remove(storage.TYPES.CATEGORIES, getId(s)); }
-        }, axios.delete);
+        try {
+            axios.put = newFilter({ "/api/v1/user/locations": (s) => { storage.save(storage.TYPES.LOCATIONS, getId(s)); } }, axios.put);
+        } catch {
+            console.error("Chouldn't disable Put requests!");
+        }
+
+        try {
+            axios.post = newFilter({ "/api/v1/user/categories": (s, data) => { storage.save(storage.TYPES.CATEGORIES, data.category); }}, axios.post);
+        } catch {
+            console.error("Chouldn't disable Post requests!");
+        }
+
+        try {
+            axios.delete = newFilter({
+                "/api/v1/user/locations": (s) => { storage.remove(storage.TYPES.LOCATIONS, getId(s)); },
+                "/api/v1/user/categories": (s) => { storage.remove(storage.TYPES.CATEGORIES, getId(s)); }
+            }, axios.delete);
+        } catch {
+           console.error("Chouldn't disable Delete requests!");
+        }
+        
+
 
         //Hide PRO Upgrade elements
         let selectors = ["#blobby-left", ".upgrade", ".progress-buttons ~ .inset"];
