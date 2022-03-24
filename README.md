@@ -13,4 +13,4 @@ The extenions should work on both the map and the tools.<br>
 ## Installation
  * Install the zip file and unpack it.
  * And use this [Install upacked extension guide](https://webkul.com/blog/how-to-install-the-unpacked-extension-in-chrome/) to install it.
- * Its also recommended to logout or clear your map data before using the extension.
+ * Its also recommended to clear your map data before using the extension.
