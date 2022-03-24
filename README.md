@@ -7,7 +7,7 @@ The extenions should work on both the map and the tools.<br>
 
 ## What does it do
    It blocks a couple of API calls for saving the locations and categories.<br>
-   And instead saves in your the local browser storage.<br>
+   And instead saves it in your local browser storage.<br>
    This enables the ability for tracking more then 100 locations and 2 categories.
 
 ## Installation
