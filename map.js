@@ -3,11 +3,14 @@ const IS_MAP = window.mapData !== undefined && typeof store !== "undefined" && w
 
 
 if (IS_MAP) {
+
+    // Marks a specific location markers
     function markAsFound(id, found=true) {
         window.mapManager.markLocationAsFound(id, found);
     }
 
 
+    // Marks all location markers
     function markAllMarkers() {
         for (let loc of Object.values(window.mapData.locations)) {        
             markAsFound(loc.id);
@@ -15,6 +18,7 @@ if (IS_MAP) {
     }
 
 
+    // Clears all location markers
     function clearAllMarkers() {
         let state = store.getState();
         for (let loc of Object.keys(state.user.foundLocations)) {
@@ -23,6 +27,7 @@ if (IS_MAP) {
     }
 
 
+    // Tracks a specific category
     function trackCategory(id, track = true) {
         if (track) {
             store.dispatch({ type: "HIVE:USER:ADD_TRACKED_CATEGORY", meta: { categoryId: parseInt(id) } });
@@ -32,6 +37,7 @@ if (IS_MAP) {
     }
 
 
+    // Tracks all categories
     function trackAllCategories() {
         for (let cat of Object.keys(window.mapData.categories)) {
             trackCategory(cat);
@@ -39,6 +45,7 @@ if (IS_MAP) {
     }
 
 
+    // Clears all categories
     function clearAllCategories() {
         let state = store.getState();
         for (let cat of Object.values(state.map.categories)) {
@@ -47,8 +54,9 @@ if (IS_MAP) {
     }
 
 
+    // Load function
     function loadMapGenieData() {
-        let data = JSON.parse(window.localStorage.getItem(getKey()) || "{}");
+        let data = storage.load();//JSON.parse(window.localStorage.getItem(getKey()) || "{}");
 
         for (let loc of Object.keys(data.locations || {})) {
             markAsFound(loc);
@@ -61,9 +69,10 @@ if (IS_MAP) {
     }
 
 
+    // Reload function
     function reloadMapGenieData() {
         let state = store.getState();
-        let data = JSON.parse(window.localStorage.getItem(getKey()) || "{}");
+        let data = storage.load(); //JSON.parse(window.localStorage.getItem(getKey()) || "{}");
         let locations = Object.assign({}, data.locations || {});
         let categories = Object.assign({}, data.categories || {});
 
@@ -97,36 +106,38 @@ if (IS_MAP) {
 
 
     {
-        function getId(s) {
-            return parseInt(s.match("/\\d+")[0].match("\\d+")[0], 10);
-        }
+        // Blocking specific saving API requests
+        // And save in local storage instead
+        {
+            function getId(s) {
+                return parseInt(s.match("/\\d+")[0].match("\\d+")[0], 10);
+            }
 
-        window.user.hasPro = true;
-        window.mapData.maxMarkedLocations = Infinity;
+            window.user.hasPro = true;
+            window.mapData.maxMarkedLocations = Infinity;
 
-        try {
-            axios.put = newFilter({ "/api/v1/user/locations": (s) => { storage.save(storage.TYPES.LOCATIONS, getId(s)); } }, axios.put);
-        } catch {
-            console.error("Chouldn't disable Put requests!");
-        }
+            try {
+                axios.put = newFilter({ "/api/v1/user/locations": (s) => { storage.save(storage.TYPES.LOCATIONS, getId(s)); } }, axios.put);
+            } catch {
+                console.error("Chouldn't disable Put requests!,\n", e);
+            }
 
-        try {
-            axios.post = newFilter({ "/api/v1/user/categories": (s, data) => { storage.save(storage.TYPES.CATEGORIES, data.category); }}, axios.post);
-        } catch {
-            console.error("Chouldn't disable Post requests!");
-        }
+            try {
+                axios.post = newFilter({ "/api/v1/user/categories": (s, data) => { storage.save(storage.TYPES.CATEGORIES, data.category); } }, axios.post);
+            } catch {
+                console.error("Chouldn't disable Post requests!,\n", e);
+            }
 
-        try {
-            axios.delete = newFilter({
-                "/api/v1/user/locations": (s) => { storage.remove(storage.TYPES.LOCATIONS, getId(s)); },
-                "/api/v1/user/categories": (s) => { storage.remove(storage.TYPES.CATEGORIES, getId(s)); }
-            }, axios.delete);
-        } catch {
-           console.error("Chouldn't disable Delete requests!");
+            try {
+                axios.delete = newFilter({
+                    "/api/v1/user/locations": (s) => { storage.remove(storage.TYPES.LOCATIONS, getId(s)); },
+                    "/api/v1/user/categories": (s) => { storage.remove(storage.TYPES.CATEGORIES, getId(s)); }
+                }, axios.delete);
+            } catch {
+                console.error("Chouldn't disable Delete requests!,\n", e);
+            }
         }
         
-
-
         //Hide PRO Upgrade elements
         let selectors = ["#blobby-left", ".upgrade", ".progress-buttons ~ .inset"];
         for (let selector of Object.values(selectors)) {
@@ -136,8 +147,8 @@ if (IS_MAP) {
             }
         }
 
-        window.addEventListener("focus", reloadMapGenieData);
-        loadMapGenieData();
+        window.addEventListener("focus", reloadMapGenieData); //Reloads on window focus this should enable multiple maps to be open at the same time.
+        loadMapGenieData(); //Load data out of the local browser storage
         console.log("Map script loaded");
     }
 }

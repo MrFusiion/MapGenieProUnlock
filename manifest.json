@@ -5,12 +5,16 @@
   "manifest_version": 3,
   "content_scripts": [ {
     "js": [ "inject.js" ],
-    "matches": [ "*://*.mapgenie.io/*" ],
+    "matches": [
+      "*://*.mapgenie.io/*"
+    ],
     "run_at": "document_end"
   } ],
   "web_accessible_resources": [ {
-      "matches": [ "*://*.mapgenie.io/*" ],
-      "resources": [ "main.js", "map.js", "guide.js", "observe.js" ]
+    "matches": [
+        "*://*.mapgenie.io/*"
+    ],
+    "resources": [ "main.js", "map.js", "guide.js", "observe.js" ]
   } ],
   "icons": {
     "16": "/images/mapgenie_pro_16.png",
