@@ -93,7 +93,7 @@ if (IS_GUIDE) {
         mapFrameWindow.axios = await waitFor(mapFrameWindow, (object) => {
             return object.axios;
         });
-        
+
         window.isPro = true;
 
         try {
@@ -159,7 +159,13 @@ if (IS_GUIDE) {
             showAll()
         }
 
-        window.addEventListener("focus", reloadMapGenieData); //Reloads on window focus this should enable multiple maps to be open at the same time.
+        //Reloads on window focus this should enable multiple maps to be open at the same time.
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState == "visible") {
+                reloadMapGenieData();
+            }
+        });
+
         loadMapGenieData(); //Load data out of the local browser storage
         console.log("Guide script loaded");
     })()
