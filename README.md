@@ -12,17 +12,17 @@ The extenions should work on both the maps and the guides(tools).<br>
    This enables the ability for tracking more then 100 locations and 2 categories.
    
  ## Preview
- # Mainpage
+ ### Mainpage
  * Added a search bar
  ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_mainpage.png)
  
- # Map
+ ### Map
  * Unlimited marker tracking
  * Unlimited category tracking
  * Added a total progress bar
  ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_map.png)
  
- # Guide
+ ### Guide
  * Same as map
  * Added a show all button (shows all markers from guide's category)
  ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_guide.png)
@@ -33,16 +33,16 @@ The extenions should work on both the maps and the guides(tools).<br>
  * Its also recommended to clear your map data before using the extension.
 
 ## Changelog
-# Version 1
+### Version 1
    * Unlimited markers.
    * Unlimited categories.
 
-# Version 2
+### Version 2
    * Guide support.
    * Guide show all button on mini map.
    * Support multiple tabs.
 
-# Version 3
+### Version 3
    * Support guides with multiple maps (tested on AC: odyssey ostraka locations).
    * Better code readablity.
    * Faster loading.
