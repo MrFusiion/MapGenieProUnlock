@@ -1,116 +1,21 @@
 const IS_GUIDE = window.isPro !== undefined && typeof state !== "undefined" && window.axios !== undefined && foundLocations !== undefined;
 
-if (IS_GUIDE) {
 
-    // checks the checkbox that links with this id
-    function markInTable(id, found = true) {
-        id = (typeof id === "number") ? Number.parseInt(id) : id;
-        let checkbox = document.querySelector(`.check[data-location-id="${id}"]`);
-        if (checkbox) {
-            checkbox.checked = found;
-        }
-    }
+class MGGuide {
+    constructor(window) {
+        this.map;
+        this.locationIds = [];
+        this.document = window.document;
+        this.axios = window.axios;
 
-
-    // Marks a specific location markers
-    function markAsFound(id, found = true) {
-        id = (typeof id !== "string") ? toString(id) : id;
-        foundLocations[id] = id;
-        const mapEvent = new CustomEvent('setLocationFound', {
-            detail: {
-                locationId: id,
-                found: found,
-            }
-        });
-        if (mapElement && mapElement.contentDocument) {
-            mapElement.contentDocument.dispatchEvent(mapEvent);
-        }
-        window.document.dispatchEvent(mapEvent);
-        markInTable(id, found);
-    }
-
-
-    // Marks all location markers
-    function markAllMarkers() {
-        for (let loc of Object.values(window.mapData.locations)) {
-            markAsFound(loc.id);
-        }
-    }
-
-
-    // Clears all location markers
-    function clearAllMarkers() {
-        for (let loc of Object.keys(foundLocations)) {
-            markAsFound(loc, false);
-        }
-    }
-
-
-    // Load function
-    function loadMapGenieData() {
-        let data = storage.load(); JSON.parse(window.localStorage.getItem(getKey()) || "{}");
-
-        for (let loc of Object.keys(data.locations || {})) {
-            markAsFound(loc);
-        }
-    }
-
-
-    // Reload function
-    function reloadMapGenieData() {
-        let data = JSON.parse(window.localStorage.getItem(getKey()) || "{}");
-        let locations = Object.assign({}, data.locations || {});
-
-        for (let loc of Object.keys(foundLocations)) {
-            if (!locations[loc]) {
-                markAsFound(loc, false);
-            }
-            delete locations[loc];
-        }
-
-        for (let loc of Object.keys(locations)) {
-            if (!foundLocations[loc]) {
-                markAsFound(loc);
-            }
-        }
-    }
-
-
-    (async function () {
-        function getId(s) {
-            return parseInt(s.match("/\\d+")[0].match("\\d+")[0], 10);
-        }
-
-        // Search for the mapData
-        // The map data is need for loading and saving the data out and in of the local browser storage.
-        let mapFrame = document.querySelector("iframe[src*='https://mapgenie.io']");
-        let mapFrameWindow = mapFrame.contentWindow;
-
-        window.mapData = await waitFor(mapFrameWindow, (object) => {
-            return object.mapData;
+        this.mapFrame = document.querySelector("iframe[src*='https://mapgenie.io']");
+        this.mapFrame.addEventListener("load", () => {
+            this._setupMap().then(this.load.bind(this));
         });
 
-        mapFrameWindow.axios = await waitFor(mapFrameWindow, (object) => {
-            return object.axios;
-        });
-
+        window.axios.put = newFilter({ "/api/v1/user/locations": () => void 0 }, window.axios.put);
+        window.axios.delete = newFilter({ "/api/v1/user/locations": () => void 0 }, window.axios.delete);
         window.isPro = true;
-
-        try {
-            let putCallback = (s) => { let id = getId(s); storage.save(storage.TYPES.LOCATIONS, id); markInTable(id, true) }
-            window.axios.put = newFilter({ "/api/v1/user/locations": putCallback }, window.axios.put);
-            mapFrameWindow.axios.put = newFilter({ "/api/v1/user/locations": putCallback }, mapFrameWindow.axios.put);
-        } catch(e) {
-            console.error("Chouldn't disable Put requests!,\n", e);
-        }
-
-        try {
-            let deleteCallback = (s) => { let id = getId(s); storage.remove(storage.TYPES.LOCATIONS, id); markInTable(id, false) }
-            window.axios.delete = newFilter({ "/api/v1/user/locations": deleteCallback }, window.axios.delete);
-            mapFrameWindow.axios.delete = newFilter({ "/api/v1/user/locations": deleteCallback }, mapFrameWindow.axios.delete);
-        } catch(e) {
-            console.error("Chouldn't disable Delete requests!,\n", e);
-        }
 
         //Hide PRO Upgrade elements
         let selectors = ["#button-upgrade"];
@@ -121,52 +26,90 @@ if (IS_GUIDE) {
             }
         }
 
-        let categoryId; //Search for the category, did not found a better solution yet.
-        let checkboxes = document.querySelectorAll(".check");
-        if (checkboxes.length > 0) {
-            let locId = parseInt(checkboxes[0].getAttribute("data-location-id"), 10);
-            for (let loc of Object.values(window.mapData.locations)) {
-                if (loc.id === locId) {
-                    categoryId = loc.category_id;
-                    break;
-                }
-            }
-        }
-
-        //Only show the locations that match the category
-        if (categoryId) {
-            let locationIds = []
-            Object.values(window.mapData.locations).forEach((value) => {
-                if (value.category_id == categoryId) {
-                    locationIds.push(value.id);
-                }
-            });
-
-            function showAll() {
-                if (locationIds.length > 0) {
-                    const event = new CustomEvent('showLocationIds', {detail: {locationIds: locationIds}});
-                    mapElement.contentDocument.dispatchEvent(event);
-                }
-            }
-
-            //Adds a button in the nav bar so you can show all locations again.
-            let button = document.createElement("button");
-            button.classList.add("btn", "btn-outline-secondary");
-            button.addEventListener("click", showAll);
-            document.querySelector("div#app > nav").appendChild(button);
-            button.textContent = "SHOW ALL";
-
-            showAll()
-        }
-
-        //Reloads on window focus this should enable multiple maps to be open at the same time.
-        document.addEventListener('visibilitychange', function () {
-            if (document.visibilityState == "visible") {
-                reloadMapGenieData();
+        this.document.addEventListener('visibilitychange', () => {
+            if (this.document.visibilityState == "visible") {
+                this.reload();
             }
         });
+    }
 
-        loadMapGenieData(); //Load data out of the local browser storage
-        console.log("Guide script loaded");
-    })()
+    async _setupMap() {
+        let mapWindow = this.mapFrame.contentWindow;
+
+        mapWindow.map = mapWindow.map || {};
+        await new Promise((resolve) => {
+            let handle = setInterval(() => {
+                if (mapWindow.map._loaded) {
+                    clearInterval(handle);
+                    resolve();
+                }
+            }, 100);
+        });
+
+        if (mapWindow.Loaded) return;
+        mapWindow.Loaded = true;
+        this.map = new MGMap(mapWindow, true);
+
+        this.map.onlocationmark = (id, found) => {
+            this._markInTable(id, found);   
+        }
+    }
+
+    _markInTable(id, found = true) {
+        let checkbox = this.document.querySelector(`.check[data-location-id="${id}"]`);
+        if (checkbox) {
+            checkbox.checked = found;
+        }
+    }
+
+    load() {
+        if (this.map) {
+            return this.map.load().then(() => {
+                let tables = this.document.querySelectorAll("table");
+                for (let table of tables) {
+                    let row = table && table.querySelector("tbody > tr");
+                    let checkboxes = row && row.querySelectorAll(".check") || [];
+                    let categories = [];
+                    for (let checkbox of checkboxes) {
+                        let id = checkbox.getAttribute("data-location-id");
+                        let catId = this.map.getCategoryId(id);
+                        if (catId) categories.push(catId);
+                    }
+                    if (categories.length > 0) {
+                        this.map.categories = categories;
+                        break;
+                    }
+                }
+                this.map._showAll();
+
+                for (let loc of Object.keys(this.map.foundLocations)) {
+                    this._markInTable(loc, true);
+                }
+            });
+        }
+        return Promise.resolve();
+    }
+
+    reload() {
+        for (let checkbox of this.document.querySelectorAll(".check")) {
+            checkbox.checked = false;
+        }
+        this.map.reload();
+        for (let loc of Object.keys(this.map.foundLocations)) {
+            this._markInTable(loc, true);
+        }
+    }
 }
+
+
+let guide;
+if (IS_GUIDE) {
+    window.axios = axios;
+    
+    guide = new MGGuide(window);
+    guide._setupMap().then(() => {
+        guide.load().then(() => {
+            console.log("Guide hijacker loaded");
+        });
+    });
+} 

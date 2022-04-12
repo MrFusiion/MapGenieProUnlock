@@ -1,12 +1,20 @@
 const DEBUG = false;
+let maps;
 
 
+function getDataKey(game) {
+    //let title = game && game.slug || "unknown";
+    let id = game && game.id || -1
+    return `mg:data:game_${id}`;
+}
 
-function getKey() {
-    let map = window.mapData.map;
-    let title = map && map.title.toLowerCase() || "unknown";
-    let id = map && map.id || -1
-    return `mg_data_${title}_${id}`;
+function getSettingsKey(game) {
+    let id = game && game.id || -1
+    return `mg:settings:${id}`;
+}
+
+function getIdFromApiCall(s) {
+    return parseInt(s.match("/\\d+")[0].match("\\d+")[0], 10);
 }
 
 
@@ -14,29 +22,31 @@ function getKey() {
 let storage = {
     TYPES: {
         LOCATIONS: "locations",
-        CATEGORIES: "categories"
+        CATEGORIES: "categories",
+        PRESETS: "presets"
     },
 
-    save(type, val) {
-        let data = JSON.parse(window.localStorage.getItem(getKey()) || "{}");
+    save(type, val, game) {
+        let data = this.load(null, game);
         data[type] = data[type] || {};
         data[type][val] = true;
-        window.localStorage.setItem(getKey(), JSON.stringify(data));
+
+        window.localStorage.setItem(getDataKey(game), JSON.stringify(data));
     },
 
-    load(type) {
-        let data = JSON.parse(window.localStorage.getItem(getKey()) || "{}");
+    load: function(type, game) {
+        let data = JSON.parse(window.localStorage.getItem(getDataKey(game)) || "{}");
         data.locations = data.locations || {};
         data.categories = data.categories || {};
 
-        if (type) {
-            return data[type];
-        }
-        return data 
+    if (type) {
+        return data[type];
+    }
+    return data 
     },
 
-    remove(type, val) {
-        let data = JSON.parse(window.localStorage.getItem(getKey()) || "{}");
+    remove(type, val, game) {
+        let data = this.load(null, game);
         data[type] = data[type] || {};
         delete data[type][val];
         
@@ -51,10 +61,18 @@ let storage = {
         }
         
         if (!empty) {
-            window.localStorage.setItem(getKey(), JSON.stringify(data));
+            window.localStorage.setItem(getDataKey(game), JSON.stringify(data));
         } else {
-            window.localStorage.removeItem(getKey());
+            window.localStorage.removeItem(getDataKey(game));
         }
+    },
+
+    export(dest) {
+        
+    },
+
+    import(path) {
+
     }
 }
 
@@ -88,14 +106,40 @@ async function waitFor(object, select) {
     }
 
     let c = 0;
+    let val;
     while (true) {
         await sleep(100);
-        if (select(object) !== undefined) {
+        val = select(object);
+        if (val !== undefined) {
             break;
         } else if (c > 100) {
+            console.warn("waitFor timed out on object", object);
             break;
         }
         c += 1;
     }
-    return select(object);
+    return val;
+}
+
+class Template {
+    constructor(content, selectors) {
+        this.template = document.createElement("template");
+        this.template.innerHTML = content;
+        document.head.appendChild(this.template);
+
+        this.selectors = selectors;
+    }
+
+    clone() {
+        let element = this.template.content.cloneNode(true);
+        let obj = { element: element };
+
+        for (let [name, selector] of Object.entries(this.selectors)) {
+            if (name !== "element") {
+                obj[name] = element.querySelector(selector);
+            }
+        }
+
+        return obj;
+    }
 }

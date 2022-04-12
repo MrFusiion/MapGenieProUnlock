@@ -1,21 +1,26 @@
 {
   "name": "FREE mapgenie PRO by MrFusiion.",
-  "description": "Make some PRO feutures availible like no marker limit and no category tracking limit.",
-  "version": "2.1.0",
+  "description": "Make unlimited markers and category tracking + extra custom features.",
+  "version": "3.0.0",
   "manifest_version": 3,
   "content_scripts": [ {
-    "js": [ "inject.js" ],
+    "js": [ "jquery.js", "inject.js" ],
     "matches": [
-      "*://*.mapgenie.io/*"
+      "*://*/*"
     ],
     "run_at": "document_end"
   } ],
-  "web_accessible_resources": [ {
+  "web_accessible_resources": [{
     "matches": [
-        "*://*.mapgenie.io/*"
+        "*://*/*"
     ],
-    "resources": [ "main.js", "map.js", "guide.js", "observe.js" ]
-  } ],
+    "resources": [
+      "main.js",
+      "list.js",
+      "map.js",
+      "guide.js"
+    ]
+  }],
   "icons": {
     "16": "/images/mapgenie_pro_16.png",
     "32": "/images/mapgenie_pro_32.png",
