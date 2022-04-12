@@ -12,7 +12,7 @@ The extenions should work on both the maps and the guides(tools).<br>
    This enables the ability for tracking more then 100 locations and 2 categories.
    
  ## Preview
- ![mainpage preview](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
+ ![mainpage preview](https://github.com/[username]/MrFusiion/MapGenieProUnlock/images/previews/mainpage.png?raw=true)
 
 ## Installation
  * Install the zip file and unpack it.
