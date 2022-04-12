@@ -10,6 +10,9 @@ The extenions should work on both the maps and the guides(tools).<br>
    It blocks a couple of API calls for saving the locations and categories.<br>
    And instead saves it in your local browser storage.<br>
    This enables the ability for tracking more then 100 locations and 2 categories.
+   
+ ## Preview
+ ![mainpage preview](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
 
 ## Installation
  * Install the zip file and unpack it.
