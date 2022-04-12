@@ -10,6 +10,22 @@ The extenions should work on both the maps and the guides(tools).<br>
    It blocks a couple of API calls for saving the locations and categories.<br>
    And instead saves it in your local browser storage.<br>
    This enables the ability for tracking more then 100 locations and 2 categories.
+   
+ ## Preview
+ # Mainpage
+ * Added a search bar
+ ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_mainpage.png)
+ 
+ # Map
+ * Unlimited marker tracking
+ * Unlimited category tracking
+ * Added a total progress bar
+ ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_map.png)
+ 
+ # Guide
+ * Same as map
+ * Added a show all button (shows all markers from guide's category)
+ ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_guide.png)
 
 ## Installation
  * Install the zip file and unpack it.
