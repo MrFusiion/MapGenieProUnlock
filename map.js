@@ -86,17 +86,17 @@ class MGMap {
         this.totalMarkers = this.mapData.locations.length;
 
         this.axios.put = newFilter({
-            "/api/v1/user/locations": (apicall) => { this.storage("save", storage.TYPES.LOCATIONS, getIdFromApiCall(apicall)); }
+            "/api/v1/user/locations": (apicall) => { this._storage("save", storage.TYPES.LOCATIONS, getIdFromApiCall(apicall)); }
         }, this.axios.put);
 
         this.axios.post = newFilter({
-            "/api/v1/user/categories": (s, data) => { this.storage("save", storage.TYPES.CATEGORIES, data.category); },
+            "/api/v1/user/categories": (s, data) => { this._storage("save", storage.TYPES.CATEGORIES, data.category); },
             //"/api/v1/user/presets": (s, data) => { storage.save(storage.TYPES.PRESETS, data.title); }
         }, this.axios.post);
 
         this.axios.delete = newFilter({
-            "/api/v1/user/locations": (apicall) => { this.storage("remove", storage.TYPES.LOCATIONS, getIdFromApiCall(apicall)); },
-            "/api/v1/user/categories": (apicall) => { this.storage("remove", storage.TYPES.CATEGORIES, getIdFromApiCall(apicall)); },
+            "/api/v1/user/locations": (apicall) => { this._storage("remove", storage.TYPES.LOCATIONS, getIdFromApiCall(apicall)); },
+            "/api/v1/user/categories": (apicall) => { this._storage("remove", storage.TYPES.CATEGORIES, getIdFromApiCall(apicall)); },
             //"/api/v1/user/presets": (apicall) => { _storage(storage.TYPES.PRESETS, getIdFromApiCall(s)); }
         }, this.axios.delete);
 
@@ -149,6 +149,12 @@ class MGMap {
             });
 
             this.markControls = TMP_MARK_CONTROLS.clone();
+            this.markControls.markAll.addEventListener("click", () => {
+                this.markLocations(true, [...this._categories(undefined, true)].map(c => c.id));
+            });
+            this.markControls.unmarkAll.addEventListener("click", () => {
+                this.markLocations(false, [...this._categories(undefined, true)].map(c => c.id));
+            });
 
             let ctrlBottomRight = this.document.querySelector(".mapboxgl-ctrl-bottom-right");
             let ctrlGroup = ctrlBottomRight.querySelector("button.mapboxgl-ctrl-zoom-in").parentElement;
@@ -171,14 +177,14 @@ class MGMap {
         }
     }
 
-    storage(action, type, id) {
+    _storage(action, type, id, update=true) {
         switch (type) {
             case storage.TYPES.LOCATIONS:
-                this._markLocation(id, action === "save");
+                this._markLocation(id, action === "save", update);
                 this.onlocationmark(id, action === "save");
                 break;
             case storage.TYPES.CATEGORIES:
-                this.trackCategory(id, action === "save");
+                this.trackCategory(id, action === "save", update);
                 this.oncategorytrack(id, action === "save");
                 break;
         }
@@ -214,11 +220,13 @@ class MGMap {
             this.totalProgress.bar.style.width = `${percent}%`;
         }
 
-        if (this.toggleFound) {
+        if (this.toggleFound) { 
             this.toggleFound.innerHTML = `
                 <i class="icon ui-icon-show-hide"></i>
                 Found Locations(${this.foundLocationsCount})`
         }
+
+        this.store.dispatch({ type: "HIVE:USER:UPDATE_FOUND_LOCATIONS_COUNT", meta: { count: 0 } }); // Force react update
     }
 
 
@@ -231,9 +239,29 @@ class MGMap {
         return false;
     }
 
+    *_locations(categories = undefined) {
+        categories = categories && categories.map((category) => parseInt(category));
+        for (let loc of Object.values(this.mapData.locations)) {
+            if (!categories || categories.includes(loc.category_id)) {
+                yield loc;
+            }
+        }
+    }
+
+    *_categories(locations=undefined, visible=undefined) {
+        let wantCategories = locations && new Set(locations.map((loc) => loc.category_id));
+        for (let cat of Object.values(this.mapData.categories)) {
+            if (!locations || wantCategories.has(cat.id)) {
+                if (visible === undefined || cat.visible == visible) {
+                    yield cat;
+                }
+            }
+        }
+    }
+
 
     // Private mark methods
-    _markLocation(id, found = true, update = true) {
+    _markLocation(id, found=true, update=true) {
         id = parseInt(id);
         if (this._validLocation(id)) {
             if ((found && !this.foundLocations[id]) || (!found && this.foundLocations[id])) {
@@ -246,9 +274,6 @@ class MGMap {
                 }
                 this.map.setFeatureState({ source: "locations-data", id: parseInt(id) }, { found: found });
                 if (this.game.id === 80) this.map.setFeatureState({ source: "circle-locations-data", id: id }, { found: found });
-            } else {
-                console.log(`Location ${id} is already ${found ? "found" : "not found"}`);
-                console.trace();
             }
             if (update) {
                 if (!this.mapManager.showFoundLocations) {
@@ -259,20 +284,46 @@ class MGMap {
         }
     }
 
-    _markLocations() {
-        let locations = this.mapData.locations;
-        for (let i = 0, len = locations.length; i < len; i++) {
-            this._markLocation(locations[i].id, true, false);
+    _markLocations(found=true, categories) {
+        for (let loc of this._locations(categories)) {
+            this._markLocation(loc.id, found, false);
         }
         this._updateTotalProgress();
     }
 
-    _unmarkLocations() {
-        let locations = this.mapData.locations;
-        for (let i = 0, len = locations.length; i < len; i++) {
-            this._markLocation(locations[i].id, false, false);
+    // Public mark methods
+    markLocation(id, found=true, update=true) {
+        this._storage(found && "save" || "remove", storage.TYPES.LOCATIONS, id, false);
+    }
+
+    markLocations(found=true, categories) {
+        for (let loc of this._locations(categories)) {
+            this.markLocation(loc.id, found, false);
         }
         this._updateTotalProgress();
+    }
+
+
+    // Categories
+    trackCategory(id, track=true) {
+        if ((track && !this.trackedCategories[id]) || (!track && this.trackedCategories[id])) {
+            if (track) {
+                this.trackedCategories[id] = true;
+            } else {
+                delete this.trackedCategories[id];
+            }
+
+            this.store.dispatch({
+                type: track && "HIVE:USER:ADD_TRACKED_CATEGORY" || "HIVE:USER:REMOVE_TRACKED_CATEGORY",
+                meta: { categoryId: parseInt(id) }
+            });
+        }
+    }
+
+    trackCategories(track=true) {
+        for (let cat of Object.keys(this.mapData.categories)) {
+            this.trackCategory(cat, track);
+        }
     }
 
     showAllCategories() {
@@ -291,60 +342,6 @@ class MGMap {
     getCategoryId(id) {
         let loc = this.store.getState().map.locationsById[id];
         return loc && loc.category_id || undefined;
-    }
-
-    // Public mark methods
-    markLocation(id, found = true) {
-        if (found) {
-            this.axios.put(`/api/v1/user/locations/${id}`);
-        } else {
-            this.axios.delete(`/api/v1/user/locations/${id}`);
-        }
-    }
-
-    markLocations() {
-        let locations = this.mapData.locations;
-        for (let i = 0, len = locations.length; i < len; i++) {
-            this.markLocation(locations[i].id, true, false);
-        }
-        this._updateTotalProgress();
-    }
-
-    unmarkLocations() {
-        let locations = this.mapData.locations;
-        for (let i = 0, len = locations.length; i < len; i++) {
-            this.markLocation(locations[i].id, false, false);
-        }
-        this._updateTotalProgress();
-    }
-
-
-    // Categories
-    trackCategory(id, track = true) {
-        if ((track && !this.trackedCategories[id]) || (!track && this.trackedCategories[id])) {
-            if (track) {
-                this.trackedCategories[id] = true;
-            } else {
-                delete this.trackedCategories[id];
-            }
-
-            this.store.dispatch({
-                type: track && "HIVE:USER:ADD_TRACKED_CATEGORY" || "HIVE:USER:REMOVE_TRACKED_CATEGORY",
-                meta: { categoryId: parseInt(id) }
-            });
-        }
-    }
-
-    trackCategories() {
-        for (let cat of Object.keys(this.mapData.categories)) {
-            this.trackCategory(cat);
-        }
-    }
-
-    untrackCategories() {
-        for (let cat of Object.keys(this.trackedCategories)) {
-            this.trackCategory(cat, false);
-        }
     }
 
     // // Apply Presets
