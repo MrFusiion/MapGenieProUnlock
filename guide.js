@@ -13,19 +13,23 @@ class MGGuide {
             this._setupMap().then(this.load.bind(this));
         });
 
-        window.axios.put = newFilter({ "/api/v1/user/locations": () => void 0 }, window.axios.put);
-        window.axios.delete = newFilter({ "/api/v1/user/locations": () => void 0 }, window.axios.delete);
+        defineFilter(() => {
+            return Promise.resolve();
+        }, {
+            put: {
+                "/api/v1/user/locations": (s) => ["put", s]
+            },
+            delete: {
+                "/api/v1/user/locations": (s) => ["delete", s],
+            }
+        }, window.axios);
+
         window.isPro = true;
 
         //Hide PRO Upgrade elements
-        let selectors = ["#button-upgrade"];
-        for (let selector of Object.values(selectors)) {
-            let element = document.querySelector(selector);
-            if (element) {
-                element.style.display = "none";
-            }
-        }
+        hideAll(["#button-upgrade"]);
 
+        // Listen for page focus
         this.document.addEventListener('visibilitychange', () => {
             if (this.document.visibilityState == "visible") {
                 this.reload();
@@ -35,24 +39,24 @@ class MGGuide {
 
     async _setupMap() {
         let mapWindow = this.mapFrame.contentWindow;
-
-        mapWindow.map = mapWindow.map || {};
+        
+        mapWindow.map = mapWindow.map || {}
         await new Promise((resolve) => {
             let handle = setInterval(() => {
                 if (mapWindow.map._loaded) {
                     clearInterval(handle);
+
+                    if (mapWindow.Loaded) return;
+                    mapWindow.Loaded = true;
+                    this.map = new MGMap(mapWindow, true);
+
+                    this.map.onlocationmark = (id, found) => {
+                        this._markInTable(id, found||false);   
+                    }
                     resolve();
                 }
             }, 100);
         });
-
-        if (mapWindow.Loaded) return;
-        mapWindow.Loaded = true;
-        this.map = new MGMap(mapWindow, true);
-
-        this.map.onlocationmark = (id, found) => {
-            this._markInTable(id, found);   
-        }
     }
 
     _markInTable(id, found = true) {
@@ -65,6 +69,7 @@ class MGGuide {
     load() {
         if (this.map) {
             return this.map.load().then(() => {
+                // Search for locations associated with the guide
                 let tables = this.document.querySelectorAll("table");
                 for (let table of tables) {
                     let row = table && table.querySelector("tbody > tr");
@@ -80,8 +85,9 @@ class MGGuide {
                         break;
                     }
                 }
-                this.map._showAll();
+                this.map.showAll();
 
+                // Mark all found locations in table
                 for (let loc of Object.keys(this.map.foundLocations)) {
                     this._markInTable(loc, true);
                 }
@@ -91,10 +97,12 @@ class MGGuide {
     }
 
     reload() {
-        for (let checkbox of this.document.querySelectorAll(".check")) {
+        // Reset found locations in table
+        for (let checkbox of this.document.querySelectorAll(".check"))
             checkbox.checked = false;
-        }
         this.map.reload();
+
+        // Mark all found locations in table
         for (let loc of Object.keys(this.map.foundLocations)) {
             this._markInTable(loc, true);
         }

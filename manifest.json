@@ -15,6 +15,7 @@
         "*://*/*"
     ],
     "resources": [
+      "storage.js",
       "main.js",
       "list.js",
       "map.js",

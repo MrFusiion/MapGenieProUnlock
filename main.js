@@ -1,131 +1,122 @@
-const DEBUG = false;
-let maps;
+{
+    if (Object.id === undefined) {
+        var id = 0;
+        Object.id = function(o) {
+            if (typeof o !== "object") return o;
 
+            if (typeof o.__uniqueid == "undefined") {
+                let objId = (++id).toString(16);
+                while (objId.length < 8) objId = "0" + objId;
 
-function getDataKey(game) {
-    //let title = game && game.slug || "unknown";
-    let id = game && game.id || -1
-    return `mg:data:game_${id}`;
+                Object.defineProperty(o, "__uniqueid", {
+                    value: `Object(${objId})`,
+                    enumerable: false,
+                    writable: false
+                });
+            }
+            return o.__uniqueid;
+        }
+    }
+
+    if (Object.clone === undefined) {
+        Object.deepClone = function (o) {
+            let newO = Object.assign(newO, o);
+            for (let [key, value] of Object.entries(o)) {
+                if (typeof value === "object") {
+                    newO[key] = Object.deepClone(value);
+                }
+            }
+            return newO;
+        }
+    }
 }
 
-function getSettingsKey(game) {
-    let id = game && game.id || -1
-    return `mg:settings:${id}`;
-}
 
 function getIdFromApiCall(s) {
     return parseInt(s.match("/\\d+")[0].match("\\d+")[0], 10);
 }
 
 
-// Saving and Removing functions
-let storage = {
-    TYPES: {
-        LOCATIONS: "locations",
-        CATEGORIES: "categories",
-        PRESETS: "presets"
-    },
-
-    save(type, val, game) {
-        let data = this.load(null, game);
-        data[type] = data[type] || {};
-        data[type][val] = true;
-
-        window.localStorage.setItem(getDataKey(game), JSON.stringify(data));
-    },
-
-    load: function(type, game) {
-        let data = JSON.parse(window.localStorage.getItem(getDataKey(game)) || "{}");
-        data.locations = data.locations || {};
-        data.categories = data.categories || {};
-
-    if (type) {
-        return data[type];
-    }
-    return data 
-    },
-
-    remove(type, val, game) {
-        let data = this.load(null, game);
-        data[type] = data[type] || {};
-        delete data[type][val];
-        
-        let empty = true;
-        for (let type of Object.values(storage.TYPES)) {
-            if (Object.keys(data[type] || {}).length > 0) {
-                empty = false;
-                break;
-            } else {
-                delete data[type];
-            }
-        }
-        
-        if (!empty) {
-            window.localStorage.setItem(getDataKey(game), JSON.stringify(data));
-        } else {
-            window.localStorage.removeItem(getDataKey(game));
-        }
-    },
-
-    export(dest) {
-        
-    },
-
-    import(path) {
-
-    }
-}
-
-
 // Creates wrapper function that filters specific string out
-function newFilter(filter, f) {
-    let _f = f;
-    return function (s) {
-        for (let [str, cb] of Object.entries(filter)) {
-            if (s.match(str)) {
-                cb(...arguments);
-                if (DEBUG) { console.log("blocked", s) };
-                return new Promise((r) => { r(); });
+let newFilter = (function() {
+    let _filters = new Proxy({}, {
+        get: (target, objId) => {
+            return target[objId] || (target[objId] = new Proxy({}, {
+                get: (objV, k) => {
+                    return objV[k] || (objV[k] = []);
+                }
+            }));
+        }
+    });
+
+    return function (obj, key, match, cb) {
+        this._filters = _filters;
+        let f = obj[key];
+        if (!f.__isFilter) {
+            let filter;
+            obj[key] = filter = function(s) {
+                for (let filter of _filters[Object.id(obj)][key]) {
+                    if (s.match(filter.match)) {
+                        if (filter.cb) { cb(...arguments) };
+                        return new Promise((r) => { r(); });
+                    }
+                    return _f(...arguments);
+                }
             }
+
+            Object.defineProperty(filter, "__isFilter", {
+                value: true,
+                enumerable: false,
+                writable: false
+            });
         }
-        return _f(...arguments);
+
+        _filters[Object.id(obj)][key].push({
+            match: match,
+            cb: cb
+        });
     }
-}
+})();
 
 
-// Returns True if the given object is an array or else False
-function isArray(object) {
-    return typeof object === "object" && object.constructor == Array;
-}
-
-
-// Waits for a secific value
-async function waitFor(object, select) {
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    let c = 0;
-    let val;
-    while (true) {
-        await sleep(100);
-        val = select(object);
-        if (val !== undefined) {
-            break;
-        } else if (c > 100) {
-            console.warn("waitFor timed out on object", object);
-            break;
+function defineFilter(filter, filters, obj) {
+    for (let [fName, fFilters] of Object.entries(filters)) {
+        let _f = obj[fName];
+        obj[fName] = function (s) {
+            for (let [match, getargs] of Object.entries(fFilters)) {
+                if (s.match(match)) {
+                    return filter(...getargs(...arguments));
+                }
+            }
+            return _f(...arguments);
         }
-        c += 1;
     }
-    return val;
 }
+
+
+// Hide all elements found by their selector
+function hideAll(selectors) {
+    for (let selector of Object.values(selectors)) {
+        for (let element of document.querySelectorAll(selector))
+            element.style.display = "none";
+    }
+}
+
 
 class Template {
-    constructor(content, selectors) {
+    static STYLES = [];
+    static STYLE = document.head.appendChild(document.createElement("style"));
+
+    constructor(name, content, style, selectors) {
         this.template = document.createElement("template");
+        this.template.setAttribute("id", name);
         this.template.innerHTML = content;
         document.head.appendChild(this.template);
+
+        if (style && style.length > 0) {
+            Template.STYLES.push(style);
+            Template.STYLE.innerHTML = Template.STYLES.join("\n");
+        }
 
         this.selectors = selectors;
     }
