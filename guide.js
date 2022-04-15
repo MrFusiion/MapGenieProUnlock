@@ -24,7 +24,7 @@ class MGGuide {
         window.isPro = true;
 
         //Hide PRO Upgrade elements
-        hideAll(["#button-upgrade"]);
+        hideAll(["#button-upgrade", "p ~ h5 ~ p ~ h4 ~ blockquote", "p ~ h5 ~ p ~ h4"]);
 
         // Listen for page focus
         this.document.addEventListener('visibilitychange', () => {
@@ -85,7 +85,7 @@ class MGGuide {
                 this.map.showAll();
 
                 // Mark all found locations in table
-                for (let loc of Object.keys(this.map.foundLocations)) {
+                for (let loc of this.map._storage.locations.keys) {
                     this._markInTable(loc, true);
                 }
             });
@@ -100,7 +100,7 @@ class MGGuide {
         this.map.reload();
 
         // Mark all found locations in table
-        for (let loc of Object.keys(this.map.foundLocations)) {
+        for (let loc of this.map._storage.locations.keys) {
             this._markInTable(loc, true);
         }
     }

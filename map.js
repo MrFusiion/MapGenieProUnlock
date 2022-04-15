@@ -176,6 +176,7 @@ class MGMap {
 
     showAll() {
         if (this.isMini) {
+            this.hideAllCategories();
             if (this._categories) {
                 this.showCategories(this._categories);
             } else {
@@ -363,15 +364,18 @@ class MGMap {
                         this._trackCategory(parseInt(cat, 10));
                     }
 
-                    // Load visible categories
-                    if (!this.isMini && this._settings.remember_categories)
-                        this.showCategories(this._settings.visible_categories.get());
+                    if (!this.isMini) {
+                        // Load visible categories
+                        if (this._settings.remember_categories)
+                            this.showCategories(this._settings.visible_categories.get());
 
-                    for (let preset of this._storage.presets.values)
-                        this._addPreset(preset);
-                    let ordering = this._storage.presets_ordering.get();
-                    if (ordering)
-                        this.reorderPresets(ordering);
+                        for (let preset of this._storage.presets.values)
+                            this._addPreset(preset);
+                        let ordering = this._storage.presets_ordering.get();
+                        if (ordering)
+                            this.reorderPresets(ordering);
+                    }
+
                         
                     this._update();
 

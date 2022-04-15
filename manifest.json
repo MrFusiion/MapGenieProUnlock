@@ -3,17 +3,15 @@
   "description": "Make unlimited markers and category tracking + extra custom features.",
   "version": "3.0.0",
   "manifest_version": 3,
-  "content_scripts": [ {
-    "js": [ "jquery.js", "inject.js" ],
-    "matches": [
-      "*://*/*"
-    ],
-    "run_at": "document_end"
-  } ],
+  "content_scripts": [ 
+    {
+      "js": [ "inject.js" ],
+      "matches": ["*://*/*"],
+      "run_at": "document_end"
+    }
+],
   "web_accessible_resources": [{
-    "matches": [
-        "*://*/*"
-    ],
+    "matches": ["*://*/*"],
     "resources": [ "storage.js", "main.js", "list.js",
                     "map.js", "guide.js", "templates.js"]
   }],
