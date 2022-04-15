@@ -14,13 +14,8 @@
     "matches": [
         "*://*/*"
     ],
-    "resources": [
-      "storage.js",
-      "main.js",
-      "list.js",
-      "map.js",
-      "guide.js"
-    ]
+    "resources": [ "storage.js", "main.js", "list.js",
+                    "map.js", "guide.js", "templates.js"]
   }],
   "icons": {
     "16": "/images/mapgenie_pro_16.png",

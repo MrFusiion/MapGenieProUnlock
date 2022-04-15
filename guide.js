@@ -1,6 +1,3 @@
-const IS_GUIDE = window.isPro !== undefined && typeof state !== "undefined" && window.axios !== undefined && foundLocations !== undefined;
-
-
 class MGGuide {
     constructor(window) {
         this.map;
@@ -109,6 +106,8 @@ class MGGuide {
     }
 }
 
+
+const IS_GUIDE = window.isPro !== undefined && typeof state !== "undefined" && window.axios !== undefined && foundLocations !== undefined;
 
 let guide;
 if (IS_GUIDE) {

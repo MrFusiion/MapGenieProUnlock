@@ -11,6 +11,7 @@ function injectCode(src) {
 // Injects the following scripts into the browser.
 injectCode(chrome.runtime.getURL("/storage.js")); // Storage functions.
 injectCode(chrome.runtime.getURL("/main.js")); // Global functions.
+injectCode(chrome.runtime.getURL("/templates.js")); // Templates.
 
 (async function () {
   await new Promise((resolve) => { setTimeout(resolve, 250); });

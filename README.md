@@ -5,27 +5,27 @@ and works fine so far. But I'm pretty sure it will work on other maps too.
 The extenions should work on both the maps and the guides(tools).<br>
 *NOTE: this is my first chrome extension I made, so don't mind the minor mistakes*
 
-## What does it do
+## How does it work
    Its basicly like a parasite takes control of the application and tells it what to do with the given data.
    It blocks a couple of API calls for saving the locations and categories.<br>
    And instead saves it in your local browser storage.<br>
    This enables the ability for tracking more then 100 locations and 2 categories.
    
  ## Preview
- ### Mainpage
- * Added a search bar
- ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_mainpage.png)
- 
- ### Map
- * Unlimited marker tracking
- * Unlimited category tracking
- * Added a total progress bar
- ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_map.png)
- 
- ### Guide
- * Same as map
- * Added a show all button (shows all markers from guide's category)
- ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_guide.png)
+   ### Mainpage
+   * Added a search bar
+   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_mainpage.png)
+   
+   ### Map
+   * Unlimited marker tracking
+   * Unlimited category tracking
+   * Added a total progress bar
+   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_map.png)
+   
+   ### Guide
+   * Same as map
+   * Added a show all button (shows all markers from guide's category)
+   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_guide.png)
 
 ## Installation
  * Install the zip file and unpack it.
@@ -33,19 +33,25 @@ The extenions should work on both the maps and the guides(tools).<br>
  * Its also recommended to clear your map data before using the extension.
 
 ## Changelog
-### Version 1
-   * Unlimited markers.
-   * Unlimited categories.
+   ### Version 1
+   * #### 1.0
+      * Unlimited markers.
+      * Unlimited categories.
 
-### Version 2
-   * Guide support.
-   * Guide show all button on mini map.
-   * Support multiple tabs.
+   ### Version 2
+   * #### 2.0
+      * Guide support.
+      * Guide show all button on mini map.
+      * Support multiple tabs.
 
-### Version 3
-   * Support guides with multiple maps (tested on AC: odyssey ostraka locations).
-   * Better code readablity.
-   * Faster loading.
-   * Searchbar on main page.
-   * Mark/Unmark all visible markers.
-   * Changed the url pattern from _\*://mapgenie.io/\*_ to _*\://\*/\*_.<br>To support maps with custom domain names.
+   ### Version 3
+   * #### 3.0
+      * Support guides with multiple maps (tested on AC: odyssey ostraka locations).
+      * Better code readablity.
+      * Faster loading.
+      * Searchbar on main page.
+      * Mark/Unmark all visible markers.
+      * Changed the url pattern from _\*://mapgenie.io/\*_ to _*\://\*/\*_.<br>To support maps with custom domain names.
+   * #### 3.1
+      * Added remember visible categories support.
+      * Added presets support.
