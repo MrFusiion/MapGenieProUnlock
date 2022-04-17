@@ -11,6 +11,9 @@ The extenions should work on both the maps and the guides(tools).<br>
    And instead saves it in your local browser storage.<br>
    This enables the ability for tracking more then 100 locations and 2 categories.
    
+ <h1>:warning: 
+beware this extension blocks saving to their servers and instead saves it locally on the browser this means your data will not be transferred to other browsers or the mobile app</h1>
+   
  ## Preview
    ### Mainpage
    * Added a search bar
