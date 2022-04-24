@@ -11,21 +11,24 @@ The extenions should work on both the maps and the guides(tools).<br>
    And instead saves it in your local browser storage.<br>
    This enables the ability for tracking more then 100 locations and 2 categories.
    
+ <h1>:warning: 
+beware this extension blocks saving to their servers and instead saves it locally on the browser this means your data will not be transferred to other browsers or the mobile app</h1>
+   
  ## Preview
    ### Mainpage
    * Added a search bar
-   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_mainpage.png)
+   ![mainpage preview](../assets/previews/mg_mainpage.png?raw=true)
    
    ### Map
    * Unlimited marker tracking
    * Unlimited category tracking
    * Added a total progress bar
-   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_map.png)
+   ![mainpage preview](../assets//previews/mg_map.png?raw=true)
    
    ### Guide
    * Same as map
    * Added a show all button (shows all markers from guide's category)
-   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_guide.png)
+   ![mainpage preview](../assets//previews/mg_guide.png?raw=true)
 
 ## Installation
  * Install the zip file and unpack it.
@@ -55,9 +58,9 @@ The extenions should work on both the maps and the guides(tools).<br>
    * #### 3.1
       * Added remember visible categories support.
       * Added presets support.
-
    * #### 3.2
-      * Presets are now availible on all maps.
+      * Presets are now availible on all maps if enabled in settings.
+      * Popup html added with active status and settings.
 
    ### Version 4
    * #### 4.0
