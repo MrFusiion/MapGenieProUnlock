@@ -1,19 +1,25 @@
 {
   "name": "FREE mapgenie PRO by MrFusiion.",
-  "description": "Make unlimited markers and category tracking + extra custom features.",
-  "version": "3.0.0",
+  "description": "Track unlimited markers and categories + extra custom features.",
+  "version": "3.4.0",
+  "version_name": "DEV",
+  // "version_name": "DIST",
+  "author": "MrFusiion",
   "manifest_version": 3,
+  "action": {
+    "default_popup": "ui/popup.html"
+  },
+  "permissions": ["storage", "tabs"],
   "content_scripts": [ 
     {
-      "js": [ "inject.js" ],
-      "matches": ["*://*/*"],
-      "run_at": "document_end"
+      "js": ["inject.js", "observer.js"],
+      "matches": ["<all_urls>"],
+      "run_at": "document_start"
     }
 ],
   "web_accessible_resources": [{
-    "matches": ["*://*/*"],
-    "resources": [ "storage.js", "main.js", "list.js",
-                    "map.js", "guide.js", "templates.js"]
+    "matches": ["<all_urls>"],
+    "resources": ["page/*.js", "page/*.css", "ui/options.json"]
   }],
   "icons": {
     "16": "/images/mapgenie_pro_16.png",

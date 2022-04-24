@@ -55,3 +55,11 @@ The extenions should work on both the maps and the guides(tools).<br>
    * #### 3.1
       * Added remember visible categories support.
       * Added presets support.
+
+   * #### 3.2
+      * Presets are now availible on all maps.
+
+   ### Version 4
+   * #### 4.0
+      * Added popup.html for the extension.
+      * Data is now saved per userid instead, so multi account usage is possible.

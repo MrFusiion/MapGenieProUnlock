@@ -1,0 +1,52 @@
+button.mg-mark-all-control,
+button.mg-unmark-all-control {
+    width: 40px;
+    height: 40px;
+    box-shadow: none!important;
+    background-color: #fff!important;
+}
+
+.mg-mark-all-control .mapboxgl-ctrl-icon,
+.mg-unmark-all-control .mapboxgl-ctrl-icon {
+    background: none!important;
+    font-size: 24px;
+    padding: 7px 6px;
+}
+
+.game-search-container {
+    position: relative;
+    height: 30px;
+    margin-bottom: 10px;
+}
+
+.game-search-form {
+    position: absolute;
+    height: 100%;
+    width: 50%;
+    max-width: 900px;
+    display: inline-flex;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.game-search-form > input {
+    width: 85%;
+    color: white;
+    border: none;
+    border-right: 1px solid hsla(0,0%,100%,.005);
+    background: hsla(0,0%,100%,.025);
+}
+
+.game-search-form > button {
+    border: none;
+    background: hsla(0,0%,100%,.025);
+    transition: background .2s ease-in-out;
+}
+
+.game-search-form > button:hover {
+    background: hsla(0,0%, 100%,.03);
+}
+
+.game-search-form > button > i.fa-search {
+    color: rgb(237, 99, 99);
+}
