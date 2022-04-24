@@ -17,18 +17,18 @@ beware this extension blocks saving to their servers and instead saves it locall
  ## Preview
    ### Mainpage
    * Added a search bar
-   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_mainpage.png)
+   ![mainpage preview](../assets/previews/mg_mainpage.png?raw=true)
    
    ### Map
    * Unlimited marker tracking
    * Unlimited category tracking
    * Added a total progress bar
-   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_map.png)
+   ![mainpage preview](../assets//previews/mg_map.png?raw=true)
    
    ### Guide
    * Same as map
    * Added a show all button (shows all markers from guide's category)
-   ![mainpage preview](https://github.com/MrFusiion/MapGenieProUnlock/blob/main/images/previews/mg_guide.png)
+   ![mainpage preview](../assets//previews/mg_guide.png?raw=true)
 
 ## Installation
  * Install the zip file and unpack it.
