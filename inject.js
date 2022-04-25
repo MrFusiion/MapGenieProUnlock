@@ -49,6 +49,11 @@ function injectStyle(href) {
 }
 
 
+function error(message) {
+    window.postMessage({ type: "mg:error", message }, "*");
+}
+
+
 fetch(chrome.runtime.getURL("ui/options.json"))
     .then(response => response.json())
     .then((options) => {
@@ -118,7 +123,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (!gameid || !userid) return;
 
         let mapData = JSON.parse(window.localStorage.getItem(`mg:game_${gameid}:user_${userid}`) || null);
-        if (!mapData) return;
+        if (!mapData) return error("No map data found");
 
         let blob = new Blob([JSON.stringify({
             gameid: gameid,
@@ -149,17 +154,22 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         filebrowser.click();
 
         filebrowser.onchange = () => {
-            console.log("chabge");
             let file = filebrowser.files[0];
             if (!file) return;
 
             var reader = new FileReader();
             reader.onload = function (e) {
-                let data = JSON.parse(e.target.result || null) || {};
+                let data;
+                try {
+                    data = JSON.parse(e.target.result || null) || {};
+                } catch (e) {
+                    return error(`Invalid JSON file: ${e}`);
+                }
                 console.log(data);
-                if (typeof data !== "object") return;
-                if (data.gameid !== gameid || data.userid !== userid) return;
-                if (!data.mapdata) return;
+                if (typeof data !== "object") return error("json has no valid data");
+                if (data.gameid !== gameid) return error("json file is not for this game");
+                if (data.userid !== userid) return error("json file is not for this user");
+                if (!data.mapdata) return error("json file does not contain map data");
 
                 //TODO validate data;
                 window.localStorage.setItem(`mg:game_${gameid}:user_${userid}`, JSON.stringify(data.mapdata));

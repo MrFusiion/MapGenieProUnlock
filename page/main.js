@@ -139,3 +139,15 @@ class MGStorageFilter {
     set() { return true; }
     remove() { return true; }
 }
+
+
+window.addEventListener("message", (e) => {
+    let data = e.data;
+    if (data.type === "mg:error") {
+        if (toastr) {
+            toastr.error(data.message);
+        } else {
+            console.error(data.message);
+        }
+    }
+});
