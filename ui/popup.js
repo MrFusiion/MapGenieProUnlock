@@ -35,8 +35,10 @@ function setStatus(status) {
             $statusElement.removeClass("active");
         }
     }
+    $
     $importBtn.prop("disabled", activeCount < 1);
     $exportBtn.prop("disabled", activeCount < 1);
+    $clearBtn.prop("disabled", activeCount < 1);
 }
 
 
@@ -54,6 +56,11 @@ $exportBtn.click(() => {
 let $importBtn = $("button#import");
 $importBtn.click(() => {
     send("import_mapdata");
+});
+
+let $clearBtn = $("button#clear");
+$clearBtn.click(() => {
+    send("clear_mapdata");
 });
 
 

@@ -266,6 +266,7 @@ class MGMap {
         this.document   = this.window.document;
         this.id = this.window.mapData.map.id;
 
+        sessionStorage.setItem("game_title", window.game.title);
         sessionStorage.setItem("gameid", window.game.id);
         sessionStorage.setItem("userid", window.user.id);
 
@@ -593,6 +594,6 @@ if (window.store) {
             }
         });
 
-        window.addEventListener("mg:mapdata_imported", mgMap.load.bind(mgMap));
+        window.addEventListener("mg:mapdata_changed", mgMap.load.bind(mgMap));
     });
 }

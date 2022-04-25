@@ -119,5 +119,5 @@ mgGuide._setupMap().then(() => {
         }
     });
 
-    window.addEventListener("mg:mapdata_imported", mgGuide.load.bind(mgGuide));
+    window.addEventListener("mg:mapdata_changed", mgGuide.load.bind(mgGuide));
 });

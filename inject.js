@@ -163,12 +163,23 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
                 //TODO validate data;
                 window.localStorage.setItem(`mg:game_${gameid}:user_${userid}`, JSON.stringify(data.mapdata));
-                window.dispatchEvent(new CustomEvent("mg:mapdata_imported"));
+                window.dispatchEvent(new CustomEvent("mg:mapdata_changed"));
                 filebrowser.remove();
             }
             reader.readAsText(file);
         };
         
         return false;
+    } else if (request.action === "clear_mapdata") {
+        let game_title = sessionStorage.getItem("game_title");
+        let ans = confirm(`Are you sure you want to clear your map data for game ${game_title}?`);
+        if (!ans) return;
+
+        let gameid = sessionStorage.getItem("gameid");
+        let userid = sessionStorage.getItem("userid");
+        if (!gameid || !userid) return;
+
+        window.localStorage.removeItem(`mg:game_${gameid}:user_${userid}`);
+        window.dispatchEvent(new CustomEvent("mg:mapdata_changed"));
     }
 });

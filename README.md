@@ -67,3 +67,4 @@ beware this extension blocks saving to their servers and instead saves it locall
    * #### 4.0
       * Data is now saved per userid instead, so multi account usage is possible.
       * Data can now be exported and imported as a json via the popup action.
+      * Data can now be cleared via the popup action.
