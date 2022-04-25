@@ -66,16 +66,16 @@ $clearBtn.click(() => {
 
 
 const MG_CONFIG = {};
-const { MANIFEST, OPTIONS_URL, DEV_BUILD, IS_CHROME_EXTENSION } = (function() {
+const DEV_BUILD = false;
+const { MANIFEST, OPTIONS_URL, IS_CHROME_EXTENSION } = (function() {
     if (chrome && chrome.runtime && chrome.runtime.getManifest) {
         return {
             MANIFEST    : chrome.runtime.getManifest(),
             OPTIONS_URL : chrome.runtime.getURL("ui/options.json"),
-            DEV_BUILD   : !!chrome.runtime.getManifest().version_name.match("DEV"),
             IS_CHROME_EXTENSION: true
         };
     }
-    return { MANIFEST: { version: "0.0.0", author: "me" }, OPTIONS_URL: "options.json", DEV_BUILD: true, IS_CHROME_EXTENSION: false };
+    return { MANIFEST: { version: "0.0.0", author: "me" }, OPTIONS_URL: "options.json", IS_CHROME_EXTENSION: false };
 })();
 
 

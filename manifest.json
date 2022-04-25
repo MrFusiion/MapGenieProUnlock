@@ -2,8 +2,7 @@
   "name": "FREE mapgenie PRO by MrFusiion.",
   "description": "Track unlimited markers and categories + extra custom features.",
   "version": "4.0.0",
-  //"version_name": "DEV",
-  "version_name": "DIST",
+  "version_name": "v4.0.0",
   "author": "MrFusiion",
   "manifest_version": 3,
   "action": {
