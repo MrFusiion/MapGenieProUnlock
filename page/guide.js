@@ -118,4 +118,6 @@ mgGuide._setupMap().then(() => {
             mgGuide.load();
         }
     });
+
+    window.addEventListener("mg:mapdata_imported", mgGuide.load.bind(mgGuide));
 });

@@ -128,15 +128,15 @@ class MGMapStore {
 }
 
 
-class MGMapStorageChangeEvent extends Event {
-    constructor(type, key, value) {
-        super("change");
-        this.type = type;
-        this.key = key;
-        this.oldValue = value;
-        this.newValue = value;
-    }
-}
+// class MGMapStorageChangeEvent extends Event {
+//     constructor(type, key, value) {
+//         super("change");
+//         this.type = type;
+//         this.key = key;
+//         this.oldValue = value;
+//         this.newValue = value;
+//     }
+// }
 
 
 class MGMapStorage {
@@ -265,6 +265,9 @@ class MGMap {
         this.window     = window;
         this.document   = this.window.document;
         this.id = this.window.mapData.map.id;
+
+        sessionStorage.setItem("gameid", window.game.id);
+        sessionStorage.setItem("userid", window.user.id);
 
         this.window.user.hasPro = true;
         this.window.mapData.maxMarkedLocations = 9e10;
@@ -584,10 +587,12 @@ if (window.store) {
         console.log("Map hijacker loaded");
 
         // Listen for page focus
-        this.document.addEventListener('visibilitychange', () => {
-            if (this.document.visibilityState == "visible") {
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState == "visible") {
                 mgMap.load();
             }
         });
+
+        window.addEventListener("mg:mapdata_imported", mgMap.load.bind(mgMap));
     });
 }

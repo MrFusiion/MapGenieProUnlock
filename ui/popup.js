@@ -15,7 +15,6 @@ function send(action, data, options={ all: false }) {
                 return new Error(err);
             });
         })).then((results) => {
-            console.log(results);
             if (queryOptions.active && queryOptions.currentWindow) {
                 return results[0];
             }
@@ -49,35 +48,12 @@ function handleOption(option, value) {
 
 let $exportBtn = $("button#export");
 $exportBtn.click(() => {
-    send("export_mapdata").then(function (name, data) {
-        let blob = new Blob([data], { type: "text/plain;charset=utf-8" });
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement("a");
-        a.href = url;
-        a.download = `${name}.json`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function () {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }, 0);
-    });
+    send("export_mapdata");
 });
 
 let $importBtn = $("button#import");
 $importBtn.click(() => {
-    var filebrowser = $(`<input type="file">`).get(0);
-    filebrowser.click();
-    filebrowser.onchange = () => {
-        let file = filebrowser.files[0];
-        if (file) {
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                console.log(e.target.result);
-            }
-            reader.readAsText(file);
-        }
-    };
+    send("import_mapdata");
 });
 
 

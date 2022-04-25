@@ -59,10 +59,11 @@ beware this extension blocks saving to their servers and instead saves it locall
       * Added remember visible categories support.
       * Added presets support.
    * #### 3.2
+      * Added popup.html for the extension.
       * Presets are now availible on all maps if enabled in settings.
       * Popup html added with active status and settings.
 
    ### Version 4
    * #### 4.0
-      * Added popup.html for the extension.
       * Data is now saved per userid instead, so multi account usage is possible.
+      * Data can now be exported and imported as a json via the popup action.

@@ -113,10 +113,62 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         sendResponse();
         return true;
     } else if (request.action === "export_mapdata") {
+        let gameid = sessionStorage.getItem("gameid");
+        let userid = sessionStorage.getItem("userid");
+        if (!gameid || !userid) return;
+
+        let mapData = JSON.parse(window.localStorage.getItem(`mg:game_${gameid}:user_${userid}`) || null);
+        if (!mapData) return;
+
+        let blob = new Blob([JSON.stringify({
+            gameid: gameid,
+            userid: userid,
+            mapdata: mapData,
+        })], { type: "text/plain;charset=utf-8" });
+        let url = URL.createObjectURL(blob);
+
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = `mg:game_${gameid}:user_${userid}_${new Date().toISOString()}.json`;
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(function () {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
 
         return false;
     } else if (request.action === "import_mapdata") {
+        let gameid = sessionStorage.getItem("gameid");
+        let userid = sessionStorage.getItem("userid");
+        if (!gameid || !userid) return;
 
+        var filebrowser = document.createElement("input");
+        filebrowser.type = "file";
+        filebrowser.click();
+
+        filebrowser.onchange = () => {
+            console.log("chabge");
+            let file = filebrowser.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                let data = JSON.parse(e.target.result || null) || {};
+                console.log(data);
+                if (typeof data !== "object") return;
+                if (data.gameid !== gameid || data.userid !== userid) return;
+                if (!data.mapdata) return;
+
+                //TODO validate data;
+                window.localStorage.setItem(`mg:game_${gameid}:user_${userid}`, JSON.stringify(data.mapdata));
+                window.dispatchEvent(new CustomEvent("mg:mapdata_imported"));
+                filebrowser.remove();
+            }
+            reader.readAsText(file);
+        };
+        
         return false;
     }
 });
