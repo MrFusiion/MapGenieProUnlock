@@ -53,7 +53,7 @@ chrome.storage.sync.get(["config"], function (data) {
 
     p_dataScript.then(({ script, parent }) => {
         if (config.extension_enabled) {
-            script.innerText += `
+            script.innerHTML += `
                 window.config = window.config || {};
                 window.config.presetsEnabled = ${config.presets_allways_enabled};
                 window.mg_pro_unlocker_loaded = true;
@@ -66,5 +66,5 @@ chrome.storage.sync.get(["config"], function (data) {
         p_mapScript.then(({ script, parent }) => {
             parent.append(script);
         }).catch(() => void 0);
-    });
+    }).catch(() => void 0);
 });

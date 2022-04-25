@@ -5,14 +5,28 @@ class MGGuide {
         this.map;
         this.document = window.document;
 
+        window.isPro = true;
+
         this.mapFrame = document.querySelector("iframe[src*='https://mapgenie.io']");
         this.mapFrame.addEventListener("load", () => {
             this._setupMap().then(this.load.bind(this));
         });
         this.checkboxes = {};
+        for (var checkbox of this.document.querySelectorAll(".check")) {
+            this.checkboxes[checkbox.getAttribute("data-location-id")] = checkbox;
+        }
 
         this.#apiFilter = new MGApiFilter(window.axios);
-        this.#apiFilter.set = this.#apiFilter.remove = () => void 0;
+        this.#apiFilter.set = (key, id, _, str) => {
+            if (key == "locations" && !this.map.store.state.map.locationsById[id]) {
+                this.map.window.axios.put(str);
+            }
+        }
+        this.#apiFilter.remove = (key, id, _, str) => {
+            if (key == "locations" && !this.map.store.state.map.locationsById[id]) {
+                this.map.window.axios.delete(str);
+            }
+        }
     }
 
     async _setupMap() {
@@ -28,6 +42,23 @@ class MGGuide {
                     mapWindow.Loaded = true;
                     this.map = new MGMap(mapWindow, true);
 
+                    // Search for locations associated with the guide
+                    let tables = this.document.querySelectorAll("table");
+                    for (let table of tables) {
+                        let row = table && table.querySelector("tbody > tr");
+                        let checkboxes = row && row.querySelectorAll(".check") || [];
+                        let categories = [];
+                        for (let checkbox of checkboxes) {
+                            let id = checkbox.getAttribute("data-location-id");
+                            let catId = this.map.getCategoryId(id);
+                            if (catId) categories.push(catId);
+                        }
+                        if (categories.length > 0) {
+                            this.map.categories = categories;
+                            break;
+                        }
+                    }
+
                     this.map.on("mark-locations", ({ id, marked }) => {
                         this._markInTable(id, marked||false); 
                     });
@@ -38,46 +69,31 @@ class MGGuide {
         });
     }
 
+    _checkboxSetChecked(checkbox, checked) {
+        if (checkbox) {
+            // if ((checked || false) != checkbox.checkbox) {
+            //     checkbox.click();
+            // }
+            checkbox.checked = checked;
+        }
+    }
+
     _markInTable(id, found = true) {
         let checkbox = this.checkboxes[id];
-        if (!checkbox) {
-            this.checkboxes[id] = checkbox = this.document.querySelector(`.check[data-location-id="${id}"]`);
-        }
-        if (checkbox) {
-            if ((found || false) != checkbox.checked) {
-                checkbox.click();
-            }
-        }
+        this._checkboxSetChecked(checkbox, found);
     }
 
     load() {
         if (!this.map) return Promise.resolve();
 
         return this.map.load().then(() => {
-            // Search for locations associated with the guide
-            let tables = this.document.querySelectorAll("table");
-            for (let table of tables) {
-                let row = table && table.querySelector("tbody > tr");
-                let checkboxes = row && row.querySelectorAll(".check") || [];
-                let categories = [];
-                for (let checkbox of checkboxes) {
-                    let id = checkbox.getAttribute("data-location-id");
-                    let catId = this.map.getCategoryId(id);
-                    if (catId) categories.push(catId);
-                }
-                if (categories.length > 0) {
-                    this.map.categories = categories;
-                    break;
-                }
-            }
             this.map.showAll();
 
-            for (let id in this.map.store.getState().map.locationsById) {
-                this._markInTable(id, false);
-            }
             // Mark all found locations in table
-            for (var loc in this.map.store.getState().user.foundLocations) {
-                this._markInTable(loc, true);
+            let foundLocations = this.map.store.state.user.foundLocations;
+            for (var checkbox of this.document.querySelectorAll(".check")) {
+                let id = checkbox.getAttribute("data-location-id");
+                this._checkboxSetChecked(checkbox, foundLocations[id]);
             }
         });
     }

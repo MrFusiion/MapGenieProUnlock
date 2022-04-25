@@ -20,7 +20,7 @@ class MGMapStore {
     }
 
     *locations(categories=undefined) {
-        let locations = this.getState().map.locations;
+        let locations = this.state.map.locations;
         for (let i in locations) {
             let loc = locations[i];
             if (!categories || categories.find(val => val == loc.category_id)) {
@@ -30,7 +30,7 @@ class MGMapStore {
     }
 
     *categories(locations=undefined, visible=undefined) {
-        let categories = this.getState().map.categories;
+        let categories = this.state.map.categories;
         let wantCategories = locations && new Set(locations.map((loc) => loc.category_id));
         for (let i in categories) {
             let cat = categories[i];
@@ -42,7 +42,7 @@ class MGMapStore {
         }
     }
 
-    getState() {
+    get state() {
         return this.store.getState();
     }
 
@@ -73,7 +73,7 @@ class MGMapStore {
     }
 
     trackCategories(track = true, categories) {
-        for (let cat in (categories || this.getState().categories)) {
+        for (let cat in (categories || this.state.categories)) {
             this.trackCategory(cat, track);
         }
     }
@@ -108,7 +108,7 @@ class MGMapStore {
 
     reorderPresets(ordering) {
         let presets = [];
-        for (let preset of this.getState().user.presets) {
+        for (let preset of this.state.user.presets) {
             presets[ordering.indexOf(preset.id)] = preset;
         }
         this._dispatch("HIVE:USER:REORDER_PRESETS", { presets });
@@ -163,6 +163,10 @@ class MGMapStorage {
         this.#eventTarget = new EventTarget();
         this.localStorage = window.localStorage;
         this.autosave = autosave;
+        this.mapData = {
+            map_id: window.mapData.map.id,
+            locationsById: window.store.getState().map.locationsById
+        }
     }
 
     get key() {
@@ -200,21 +204,27 @@ class MGMapStorage {
         let settings = deepAsign(MGMapStorage.default.settings, storage.settings || {});
         this.data = objectSet(this.data || {}, data);
         this.settings = objectSet(this.settings || {}, settings)
+
+        let c = 0;
+        let mapId = this.mapData.map_id;
+        let locationsById = this.mapData.locationsById;
+        for (let locId in this.data.locations) {
+            let loc = locationsById[locId];
+            if (loc && loc.map_id == mapId) {
+                c++;
+            }
+        }
+
         this.local = {
-            foundLocationsCount: Object.keys(this.data.locations).length,
+            foundLocationsCount: c,
         }
     }
 
     save() {
-        let storage = {
-            data: objMinimize(this.data, MGMapStorage.default.data),
-            settings: objMinimize(this.settings, MGMapStorage.default.settings),
-        };
-        if (typeof storage.data === "undefined") delete storage.data;
-        if (typeof storage.settings === "undefined") delete storage.settings;
-
-        if (Object.keys(storage).length > 0) {
-            this.localStorage.setItem(this.#key, JSON.stringify(storage));
+        let data = objMinimize(this.data, MGMapStorage.default.data);
+        let settings = objMinimize(this.settings, MGMapStorage.default.settings);
+        if (data || settings) {
+            this.localStorage.setItem(this.#key, JSON.stringify({ data, settings }));
         } else {
             this.localStorage.removeItem(this.#key);
         }
@@ -254,6 +264,7 @@ class MGMap {
         this.#isMini    = mini;
         this.window     = window;
         this.document   = this.window.document;
+        this.id = this.window.mapData.map.id;
 
         this.window.user.hasPro = true;
         this.window.mapData.maxMarkedLocations = 9e10;
@@ -299,7 +310,7 @@ class MGMap {
         }
 
         this.#apiFilter = new MGApiFilter(this.window.axios);
-        this.#apiFilter.set = (key, id, postData, str) => {
+        this.#apiFilter.set = (key, id, postData) => {
             switch (key) {
                 case "locations":
                     let isFound = this.#storage.data.locations[id] || false;
@@ -311,7 +322,7 @@ class MGMap {
                         data[key][id] = true;
                         return data;
                     });
-                    this.#eventTarget.dispatchEvent(new MGMapMarkEvent(`mark-${key}`, id, true));;
+                    this.#eventTarget.dispatchEvent(new MGMapMarkEvent(`mark-${key}`, id, true));
                     break;
                 case "presets":
                     this.#storage.updateData(data => {
@@ -401,12 +412,13 @@ class MGMap {
                 return () => {
                     let c = 0;
                     this.#storage.updateData(data => {
-                        for (let loc of this.store.getState().map.locations) {
+                        for (let loc of this.store.state.map.locations) {
                             if (loc.category.visible) {
-                                if (found) {
-                                    data.locations[loc.id] = true;
+                                if (found && !data.locations[loc.id]) {
                                     c++;
-                                } else {
+                                    data.locations[loc.id] = true;
+                                } else if (data.locations[loc.id]) {
+                                    c--;
                                     delete data.locations[loc.id];
                                 }
                                 this.store.markLocation(loc.id, found);
@@ -414,7 +426,7 @@ class MGMap {
                         }
                         return data;
                     });
-                    this.#storage.local.foundLocationsCount = c;
+                    this.#storage.local.foundLocationsCount += c;
                     this._update();
                 }
             }
@@ -460,7 +472,7 @@ class MGMap {
     _update() {
         let count = this.#storage.local.foundLocationsCount;
         let total = this.window.mapData.totalLocations
-            || (this.window.mapData.totalLocations = Object.keys(this.store.getState().map.locations).length);
+            || (this.window.mapData.totalLocations = Object.keys(this.store.state.map.locations).length);
 
         if (this.totalProgress) {
             let percent = count / total * 100;
@@ -481,10 +493,11 @@ class MGMap {
         }
 
         this.store.updateFoundLocationsCount(0); // Force react update
+        this.store.toggleCategories([]); // Force react update
     }
 
     getCategoryId(id) {
-        let loc = this.store.getState().map.locationsById[id];
+        let loc = this.store.state.map.locationsById[id];
         return loc && loc.category_id || undefined;
     }
 
@@ -497,7 +510,7 @@ class MGMap {
             $div.click();
         }
     }
-    //Load and Reload methods
+
     load() {
         return new Promise((resolve) => {
             this.#storage.load();
@@ -512,13 +525,13 @@ class MGMap {
             }
         }).then(() => {
             this.store.markLocations(false);
-            for (let loc of Object.keys(this.#storage.data.locations)) {
+            for (let loc in this.#storage.data.locations) {
                 this.store.markLocation(loc, true);
             }
 
             if (!this.#isMini) {
                 this.store.trackCategories(false);
-                for (let cat in Object.keys(this.#storage.data.categories)) {
+                for (let cat in this.#storage.data.categories) {
                     this.store.trackCategory(cat, true);
                 }
 
@@ -533,7 +546,7 @@ class MGMap {
                     this.setRememberCategories(false);
                 }
 
-                let curPresets = this.store.getState().user.presets;
+                let curPresets = this.store.state.user.presets;
                 let presets = Object.values(this.#storage.data.presets);
                 for (let preset of curPresets) {
                     this.store.removePreset(preset.id);
@@ -576,7 +589,5 @@ if (window.store) {
                 mgMap.load();
             }
         });
-
-        mgMap.store.toggleCategories([]); // Force react update
     });
 }
