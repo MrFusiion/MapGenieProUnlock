@@ -87,14 +87,13 @@ chrome.storage.sync.get(["config"], async (data) => {
             }
 
             injectStyle("page/style.css");
-            injectCode("page/main.js").then(() => {
-                if (IS_MAP || IS_GUIDE) injectCode("page/map.js", true);
-                if (IS_GUIDE) injectCode("page/guide.js", true);
-                if (IS_LIST) {
-                    injectStyle("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css");
-                    injectCode("page/list.js", true);
-                }
-            });
+            injectCode("page/main.js");
+            if (IS_MAP || IS_GUIDE) injectCode("page/map.js", true);
+            if (IS_GUIDE) injectCode("page/guide.js", true);
+            if (IS_LIST) {
+                injectStyle("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css");
+                injectCode("page/list.js", true);
+            }
         }
     });
 });

@@ -579,7 +579,7 @@ class MGMap {
 
 let mgMap
 if (window.store) {
-    if (!window.mg_pro_unlocker_loaded) {
+    if (!window.mg_pro_unlocker_loaded && !window.config.presetsEnabled) {
         this.window.toastr.error("MapGeniePro Unlock:\nExtension was to slow to enable presets, please try again.");
     }
 
