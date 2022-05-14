@@ -31,9 +31,18 @@ beware this extension blocks saving to their servers and instead saves it locall
    ![mainpage preview](../assets//previews/mg_guide.png?raw=true)
 
 ## Installation
+### chrome
  * Install the zip file and unpack it.
  * And use this [Install upacked extension guide](https://webkul.com/blog/how-to-install-the-unpacked-extension-in-chrome/) to install it.
  * Its also recommended to clear your map data before using the extension.
+
+### firefox
+ * install node and npm [guide](https://phoenixnap.com/kb/install-node-js-npm-on-windows).
+ * open the folder with a command prompt
+    * type `npm run build` to build the file.
+    * for testing `npm run start`.
+ * you can find the build in the build directory
+ * then install it into firefox [guide](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension)
 
 ## Changelog
    ### Version 1
