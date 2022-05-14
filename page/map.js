@@ -485,7 +485,7 @@ class MGMap {
             this.totalProgress.bar.style.width      = `${percent}%`;
         }
 
-        if (this.toggleFound) { 
+        if (this.toggleFound && typeof count === "number") { 
             this.toggleFound.innerHTML = `
                 <i class="icon ui-icon-show-hide"></i>
                 Found Locations(${count})

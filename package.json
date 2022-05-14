@@ -1,0 +1,25 @@
+{
+  "name": "mapgeniepro",
+  "version": "4.0.0",
+  "description": "Chrome extension that unlocks [Map Genie](https://mapgenie.io/) PRO features for free.<br>\r The extension is only tested on the [DL2 villedor Map](https://mapgenie.io/dying-light-2/maps/villedor) and [Elden Ring Map](https://mapgenie.io/elden-ring)\r and works fine so far. But I'm pretty sure it will work on other maps too.\r The extenions should work on both the maps and the guides(tools).<br>\r *NOTE: this is my first chrome extension I made, so don't mind the minor mistakes*",
+  "main": "\"\"",
+  "scripts": {
+    "start": "%CD%/node_modules/.bin/web-ext run",
+    "build": "%CD%/node_modules/.bin/web-ext build -o -a %CD%/build",
+    "sign": "%CD%/node_modules/.bin/web-ext/web-ext sign --api-key=$AMO_JWT_ISSUER --api-secret=$AMO_JWT_SECRET"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrFusiion/MapGenieProUnlock.git"
+  },
+  "keywords": [ "Mapgenie", "pro" ],
+  "author": "MrFusiion",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MrFusiion/MapGenieProUnlock/issues"
+  },
+  "homepage": "https://github.com/MrFusiion/MapGenieProUnlock#readme",
+  "devDependencies": {
+    "web-ext": "^6.8.0"
+  }
+}
