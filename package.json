@@ -1,7 +1,7 @@
 {
   "name": "mg-pro-unlock",
   "title": "Mapgenie PRO unlocker by MrFusiion",
-  "version": "4.2.0",
+  "version": "4.1.0",
   "description": "Chrome extension that unlocks [Map Genie](https://mapgenie.io/) PRO features for free.",
   "author": "MrFusiion",
   "main": "inject.js",
