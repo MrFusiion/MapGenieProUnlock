@@ -30,7 +30,6 @@ function getScript({ startsWith, src }) {
     });
 }
 
-
 let p_dataScript = Promise.race([
     getScript({ startsWith: "window.mapUrls" }),
     getScript({ startsWith: "window.mapUrl" })
@@ -38,38 +37,38 @@ let p_dataScript = Promise.race([
     parent = script.parentNode;
     script.remove();
     return { script, parent };
-}).catch(console.error).then((a) => {
-    return a || {};
 });
 
 
 let p_mapScript = getScript({ src: "map.js" }).then(script => {
+    console.log("map.js found");
     parent = script.parentNode;
     script.remove();
     return { script, parent }; 
-}).catch(console.error).then((a) => {
-    return a || {};
 });
 
 chrome.storage.sync.get(["config"], function (data) {
     let config = data.config;
-
+    
     p_dataScript.then(({ script, parent }) => {
-        if (script) {
+        if (script) {            
+            parent.append(script)
             if (config.extension_enabled) {
-                script.innerText = `
-                    ${script.innerText}
-                    window.mg_pro_unlocker_loaded = true;
-                    window.config = window.config || {};
-                    window.config.presetsEnabled = window.config.presetsEnabled || ${config.presets_allways_enabled};`;
+                window.sessionStorage.setItem("mg:config:presets_allways_enabled", JSON.stringify(config.presets_allways_enabled || false));
+                const dataScript = document.createElement("script");
+                dataScript.src = chrome.runtime.getURL("data.js");
+                parent.append(dataScript);
+                return new Promise(resolve => {
+                    dataScript.onload = function () {
+                        resolve();
+                    };
+                });
             }
-            parent.append(script);
         };
-
+    }).then(() => {
         p_mapScript.then(({ script, parent }) => {
             if (!script) return;
             parent.append(script);
         }).catch(console.error);
-
     }).catch(console.error);
 });

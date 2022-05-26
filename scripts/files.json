@@ -1,0 +1,20 @@
+[
+    { 
+        "file": "./page.js",
+        "action": "bundle",
+        "args": ["./src/page/index.js"]
+    },
+    "./page.css",
+    "./images",
+    "./ui",
+    {
+        "file": "./data.js",
+        "action": "rename",
+        "args": ["./src/main/data.js"]
+    },
+    {
+        "file": "./main.js", 
+        "action": "bundle",
+        "args": ["./src/main/index.js"]
+    }
+]

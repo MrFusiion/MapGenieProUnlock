@@ -48,7 +48,9 @@ body {
 }
 
 .close-button,
-.reload-button {
+.reload-button,
+.mapgenie-button {
+    display: inline-block;
     position: absolute;
     color: var(--text-light);
     margin: 8px;
@@ -65,8 +67,15 @@ body {
     right: 0;
 }
 
+.mapgenie-button {
+    font-size: 1.5em;
+    margin-top: 6px;
+    left: 0;
+}
+
 .close-button:hover,
-.reload-button:hover {
+.reload-button:hover,
+.mapgenie-button:hover {
     color: var(--red);
 }
 

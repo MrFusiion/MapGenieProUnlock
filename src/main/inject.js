@@ -1,3 +1,4 @@
+const { isList, isMap, isGuide } = require("../page/site");
 let HIDE_ELEMET_SELECTORS = [
     "#blobby-left", ".upgrade", ".progress-buttons ~ .inset",               // map
     "#button-upgrade", "p ~ h5 ~ p ~ h4 ~ blockquote", "p ~ h5 ~ p ~ h4"    // guide
@@ -37,7 +38,6 @@ function injectCode(src, defered = false, module = false) {
     });
 }
 
-
 function injectStyle(href) {
     return new Promise(resolve => {
         let style = document.createElement("link");
@@ -76,28 +76,22 @@ chrome.storage.sync.get(["config"], async (data) => {
     };
 
     domLoaded(function () {
-        IS_LIST     = window.location.href === "https://mapgenie.io/";
-        IS_MAP      = !!document.querySelector(".map > #app > #map");
-        IS_GUIDE    = !!document.querySelector(".guide > #app #sticky-map");
-
+        IS_LIST = isList();
+        IS_MAP = isMap();
+        IS_GUIDE = isGuide();
+        
         if (IS_LIST || IS_MAP || IS_GUIDE) {
             for (let selector of Object.values(HIDE_ELEMET_SELECTORS)) {
                 for (let element of document.querySelectorAll(selector))
                     element.style.display = "none";
             }
 
-            injectStyle("page/style.css");
-            injectCode("page/main.js");
-            if (IS_MAP || IS_GUIDE) injectCode("page/map.js", true);
-            if (IS_GUIDE) injectCode("page/guide.js", true);
-            if (IS_LIST) {
-                injectStyle("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css");
-                injectCode("page/list.js", true);
-            }
+            injectStyle("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css");
+            injectStyle("page.css");
+            injectCode("page.js");
         }
     });
 });
-
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === "get_status") {

@@ -34,6 +34,7 @@ button.mg-unmark-all-control {
     color: white;
     border: none;
     border-right: 1px solid hsla(0,0%,100%,.005);
+    padding: 0 10px;
     background: hsla(0,0%,100%,.025);
 }
 
@@ -50,3 +51,15 @@ button.mg-unmark-all-control {
 .game-search-form > button > i.fa-search {
     color: rgb(237, 99, 99);
 }
+
+/* label[for="found-checkbox"].active::after {
+    -webkit-mask-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23000000' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23000000' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23000000' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E");
+}
+
+label[for="found-checkbox"]::after {
+    -webkit-mask-image: none;
+    background-image: none;
+    mask-image: none;
+} */

@@ -1,7 +1,5 @@
-let IS_LIST = window.location.href === "https://mapgenie.io/";
-
-// Add a searchbar to the page.
-if (IS_LIST) {
+module.exports = function () {
+    // Add a searchbar to the page.
     const $gameList = $("#games-list-container > .games");
 
     function filterGameList(text) {
@@ -24,13 +22,13 @@ if (IS_LIST) {
         $datalist.append($option);
     }
     $datalist.appendTo(document.body);
-    
+
     let $gameSearchFrom = $(`<div class="game-search-container">
-        <div class="game-search-form">
-            <input list="games-list" type="search" placeholder="Search.." name="mg:game_search">
-            <!--<button><i class="fa fa-search"></i></button>-->
-        </div>
-    </div>`);
+            <div class="game-search-form">
+                <input list="games-list" type="search" placeholder="Search.." name="mg:game_search">
+                <!--<button><i class="fa fa-search"></i></button>-->
+            </div>
+        </div>`);
     let $input = $gameSearchFrom.find("input");
     $gameSearchFrom.insertBefore($gamesListContainer);
 

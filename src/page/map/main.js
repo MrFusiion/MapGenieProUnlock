@@ -1,248 +1,6 @@
-class MGMapStore {
-    #map; #gameid;
-
-    constructor(window, storage) {
-        this.store = window.store;
-        this.#map = window.map;
-        this.#gameid = window.game.id;
-
-        // create wrapper for getState so we can overide some values
-        let getState = window.store.getState;
-        window.store.getState = () => {
-            let state = getState();
-            if (storage.local && storage.data) {
-                state.user.foundLocationsCount  = storage.local.foundLocationsCount;
-                state.user.foundLocations       = storage.data.locations;
-                state.user.trackedCategories    = Object.keys(storage.data.categories).map((key) => parseInt(key));
-            }
-            return state;
-        }
-    }
-
-    *locations(categories=undefined) {
-        let locations = this.state.map.locations;
-        for (let i in locations) {
-            let loc = locations[i];
-            if (!categories || categories.find(val => val == loc.category_id)) {
-                yield loc;
-            }
-        }
-    }
-
-    *categories(locations=undefined, visible=undefined) {
-        let categories = this.state.map.categories;
-        let wantCategories = locations && new Set(locations.map((loc) => loc.category_id));
-        for (let i in categories) {
-            let cat = categories[i];
-            if (!locations || wantCategories.has(cat.id)) {
-                if (visible === undefined || cat.visible == visible) {
-                    yield cat;
-                }
-            }
-        }
-    }
-
-    get state() {
-        return this.store.getState();
-    }
-
-    _dispatch(type, meta={}) {
-        this.store.dispatch({ type, meta });
-    }
-
-    markLocation(id, found = true) {
-        id = parseInt(id);
-        this.#map.setFeatureState({ source: "locations-data", id }, { found });
-        if (this.#gameid === 80) this.#map.setFeatureState({ source: "circle-locations-data", id }, { found });
-    }
-
-    markLocations(found = true, options = { categories: undefined, locations: undefined }) {
-        let { categories, locations } = options;
-        for (let loc of this.locations(options.categories)) {
-            let correctCategory = !categories   || categories.find(val => val == loc.category_id);
-            let correctLocation = !locations    || locations.find(val => val == loc.id);
-            if (correctCategory && correctLocation) {
-                this.markLocation(loc.id, found);;
-            }
-        }
-    }
-
-    trackCategory(id, track = true) {
-        let type = track && "HIVE:USER:ADD_TRACKED_CATEGORY" || "HIVE:USER:REMOVE_TRACKED_CATEGORY";
-        this._dispatch(type, { categoryId: parseInt(id) });
-    }
-
-    trackCategories(track = true, categories) {
-        for (let cat in (categories || this.state.categories)) {
-            this.trackCategory(cat, track);
-        }
-    }
-
-    showAllCategories() {
-        this._dispatch("HIVE:MAP:SHOW_ALL_CATEGORIES");
-    }
-
-    hideAllCategories() {
-        this._dispatch("HIVE:MAP:HIDE_ALL_CATEGORIES");
-    }
-
-    showCategories(visibilities) {
-        this._dispatch("HIVE:MAP:SET_CATEGORIES_VISIBILITY", { visibilities });
-    }
-
-    toggleCategories(categoryIds) {
-        this._dispatch("HIVE:MAP:TOGGLE_CATEGORIES", { categoryIds });
-    }
-
-    updateFoundLocationsCount(count=0) {
-        this._dispatch("HIVE:USER:UPDATE_FOUND_LOCATIONS_COUNT", { count })
-    }
-
-    addPreset(preset) {
-        this._dispatch("HIVE:USER:ADD_PRESET", { preset });
-    }
-
-    removePreset(presetId) {
-        this._dispatch("HIVE:USER:DELETE_PRESET", { presetId });
-    }
-
-    reorderPresets(ordering) {
-        let presets = [];
-        for (let preset of this.state.user.presets) {
-            presets[ordering.indexOf(preset.id)] = preset;
-        }
-        this._dispatch("HIVE:USER:REORDER_PRESETS", { presets });
-    }
-
-    applyPreset(preset, additive) {
-        this._dispatch("HIVE:MAP:APPLY_PRESET", { preset, additive });
-    }
-
-    unapplyPreset(preset) {
-        this._dispatch("HIVE:MAP:UNAPPLY_PRESET", { preset });
-    }
-
-    setActivePresets(activePresets) {
-        this._dispatch("HIVE:MAP:SET_ACTIVE_PRESETS", { activePresets })
-    }
-}
-
-
-// class MGMapStorageChangeEvent extends Event {
-//     constructor(type, key, value) {
-//         super("change");
-//         this.type = type;
-//         this.key = key;
-//         this.oldValue = value;
-//         this.newValue = value;
-//     }
-// }
-
-
-class MGMapStorage {
-    #key; #eventTarget;
-
-    static default = {
-        data: {
-            locations: {},
-            categories: {},
-            presets: {},
-            presets_order: [],
-            visible_categories: {},
-        },
-
-        settings: {
-            remember_categories: false,
-        }
-    }
-
-    constructor(window, autosave=true) {
-        let gameid = window.game.id;
-        let userid = window.user.id;
-        this.#key = `mg:game_${gameid}:user_${userid}`;
-        this.#eventTarget = new EventTarget();
-        this.localStorage = window.localStorage;
-        this.autosave = autosave;
-        this.mapData = {
-            map_id: window.mapData.map.id,
-            locationsById: window.store.getState().map.locationsById
-        }
-    }
-
-    get key() {
-        return this.#key;
-    }
-
-    updateData(f) {
-        let newData = f(deepCopy(this.data));
-        if (typeof newData === "undefined") throw new Error("updateData: update function did not return a value!");
-        objectSet(this.data, newData);
-        this.saveCheck();
-        return globalThis;
-    }
-
-    updateSettings(f) {
-        let newSettings = f(deepCopy(this.settings));
-        if (typeof newSettings === "undefined") throw new Error("updateSettings: update function did not return a value!");
-        objectSet(this.settings, newSettings);
-        this.saveCheck();
-        return this;
-    }
-
-    update(f) {
-        let newData = f(deepCopy({ data: this.data, settings: this.settings }));
-        if (typeof newData === "undefined") throw new Error("update: update function did not return a value!");
-        objectSet(this.data, newData.data || {});
-        objectSet(this.settings, newData.settings || {});
-        this.saveCheck();
-        return this;
-    }
-
-    load() {
-        let storage = JSON.parse(this.localStorage.getItem(this.#key) || null) || {};
-        let data = deepAsign(MGMapStorage.default.data, storage.data || {});
-        let settings = deepAsign(MGMapStorage.default.settings, storage.settings || {});
-        this.data = objectSet(this.data || {}, data);
-        this.settings = objectSet(this.settings || {}, settings)
-
-        let c = 0;
-        let mapId = this.mapData.map_id;
-        let locationsById = this.mapData.locationsById;
-        for (let locId in this.data.locations) {
-            let loc = locationsById[locId];
-            if (loc && loc.map_id == mapId) {
-                c++;
-            }
-        }
-
-        this.local = {
-            foundLocationsCount: c,
-        }
-    }
-
-    save() {
-        let data = objMinimize(this.data, MGMapStorage.default.data);
-        let settings = objMinimize(this.settings, MGMapStorage.default.settings);
-        if (data || settings) {
-            this.localStorage.setItem(this.#key, JSON.stringify({ data, settings }));
-        } else {
-            this.localStorage.removeItem(this.#key);
-        }
-    }
-
-    saveCheck() {
-        if (this.autosave) this.save();
-    }
-
-    on(type, f) {
-        this.#eventTarget.addEventListener(type, f);
-    }
-
-    off(type, f) {
-        this.#eventTarget.removeEventListener(type, f);
-    }
-}
-
+const MGMapStore = require("./store");
+const MGMapStorage = require("./storage");
+const { MGStorageFilter, MGApiFilter } = require("../filters");
 
 class MGMapMarkEvent extends Event {
     constructor(type, id, marked) {
@@ -261,10 +19,11 @@ class MGMap {
     constructor(window, mini = false) {
         if (!window.user) { throw "User is not loggedin!"; }
 
-        this.#isMini    = mini;
-        this.window     = window;
-        this.document   = this.window.document;
+        this.#isMini = mini;
+        this.window = window;
+        this.document = this.window.document;
         this.id = this.window.mapData.map.id;
+        this._popup = null;
 
         sessionStorage.setItem("game_title", window.game.title);
         sessionStorage.setItem("gameid", window.game.id);
@@ -294,7 +53,7 @@ class MGMap {
         }
         this.#storageFilter.remove = (key, match) => {
             if (key === "visible_categories") {
-                let id = match.match(/(\d+)$/)[1]; 
+                let id = match.match(/(\d+)$/)[1];
                 this.#storage.updateData(data => {
                     delete data.visible_categories[id];
                     return data;
@@ -317,8 +76,7 @@ class MGMap {
         this.#apiFilter.set = (key, id, postData) => {
             switch (key) {
                 case "locations":
-                    let isFound = this.#storage.data.locations[id] || false;
-                    if (!isFound) this.#storage.local.foundLocationsCount++;
+                    this._toggleLocation(id);
                     this._update();
                 case "categories":
                     id = postData && postData.category || id;
@@ -353,8 +111,7 @@ class MGMap {
         this.#apiFilter.remove = (key, id, data) => {
             switch (key) {
                 case "locations":
-                    let isFound = this.#storage.data.locations[id] || false;
-                    if (isFound) this.#storage.local.foundLocationsCount--;
+                    this._toggleLocation(id);
                     this._update();
                 case "categories":
                     this.#storage.updateData(data => {
@@ -370,7 +127,7 @@ class MGMap {
                         delete data.presets[id];
                         return data;
                     });
-                   break;
+                    break;
             }
             return data;
         }
@@ -397,9 +154,9 @@ class MGMap {
             $totalProgress.find(".progress-item").click(this.store.showAllCategories.bind(this.store));
 
             this.totalProgress = {
-                icon    : $totalProgress.find(".icon").get(0),
-                counter : $totalProgress.find(".counter").get(0),
-                bar     : $totalProgress.find(".progress-bar").get(0),
+                icon: $totalProgress.find(".icon").get(0),
+                counter: $totalProgress.find(".counter").get(0),
+                bar: $totalProgress.find(".progress-bar").get(0),
             }
 
             // Add toggle found button
@@ -421,7 +178,7 @@ class MGMap {
                                 if (found && !data.locations[loc.id]) {
                                     c++;
                                     data.locations[loc.id] = true;
-                                } else if (data.locations[loc.id]) {
+                                } else if (!found && data.locations[loc.id]) {
                                     c--;
                                     delete data.locations[loc.id];
                                 }
@@ -433,7 +190,57 @@ class MGMap {
                     this.#storage.local.foundLocationsCount += c;
                     this._update();
                 }
+
             }
+
+            // Overide found-checkbox
+            const observer = new MutationObserver((mutations_list) => {
+                mutations_list.forEach((mutation) => {
+                    mutation.removedNodes.forEach((node) => {
+                        if (node.classList.contains("mapboxgl-popup")) {
+                            this._popup = null;
+                        }
+                    });
+
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.classList.contains("mapboxgl-popup")) {
+                            const label = node.querySelector("label[for='found-checkbox']");
+
+                            const button = label && label.parentNode;
+                            if (button) {
+                                const locId = this.store.state.map.selectedLocation?.id;
+
+                                const cloneBtn = button.cloneNode(true);
+                                button.addEventListener("click", markControl(true));
+                                $(cloneBtn).insertAfter(button);
+                                button.style.display = "none";
+
+                                const input = cloneBtn.querySelector("input[type='checkbox']");
+                                // input.checked = this.store.isMarked(locId);
+
+                                this._popup = { input, locId };
+                                cloneBtn.addEventListener("click", () => {
+                                    const found = !this.store.isMarked(locId);
+                                    this.store.markLocation(locId, found);
+                                    this.#storage.updateData(data => {
+                                        if (found && !data.locations[locId]) {
+                                            data.locations[locId] = true;
+                                            this.#storage.local.foundLocationsCount += 1;
+                                        } else if (!found && data.locations[locId]) {
+                                            delete data.locations[locId];
+                                            this.#storage.local.foundLocationsCount -= 1;
+                                        }
+                                        return data;
+                                    });
+                                    this._update();
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(this.document.querySelector(".mapboxgl-map"), { childList: true });
 
             let $markControls = $(`
                 <div class="mapboxgl-ctrl mapboxgl-ctrl-group">
@@ -455,8 +262,8 @@ class MGMap {
         if (typeof (categories) === "string") {
             this.#categories = { [categories]: true };
         } else if (typeof (categories) === "object") {
-            this.#categories = Object.assign({}, 
-                                    ...categories.map((category) => ({ [category]: true })));
+            this.#categories = Object.assign({},
+                ...categories.map((category) => ({ [category]: true })));
         } else {
             this.#categories = undefined;
         }
@@ -473,6 +280,28 @@ class MGMap {
         }
     }
 
+    _toggleLocation(id) {
+        const isFound = this.store.isMarked(id);
+        this.#storage.updateData(data => {
+            if (isFound) {
+                delete data.locations[id];
+                this.#storage.local.foundLocationsCount--;
+            } else {
+                data.locations[id] = true;
+                this.#storage.local.foundLocationsCount++;
+            }
+            return data;
+        });
+        this.store.markLocation(id, !isFound);
+    }
+
+    _updatePopup() {
+        if (!this._popup) return;
+        const { input, locId } = this._popup;
+        //console.log(this.store.isMarked(locId), locId);
+        input.checked = this.store.isMarked(locId);
+    }
+
     _update() {
         let count = this.#storage.local.foundLocationsCount;
         let total = this.window.mapData.totalLocations
@@ -480,12 +309,12 @@ class MGMap {
 
         if (this.totalProgress) {
             let percent = count / total * 100;
-            this.totalProgress.icon.textContent     = `${percent.toFixed(2)}%`;
-            this.totalProgress.counter.textContent  = `${count} / ${total}`;
-            this.totalProgress.bar.style.width      = `${percent}%`;
+            this.totalProgress.icon.textContent = `${percent.toFixed(2)}%`;
+            this.totalProgress.counter.textContent = `${count} / ${total}`;
+            this.totalProgress.bar.style.width = `${percent}%`;
         }
 
-        if (this.toggleFound) { 
+        if (this.toggleFound) {
             this.toggleFound.innerHTML = `
                 <i class="icon ui-icon-show-hide"></i>
                 Found Locations(${count})
@@ -496,6 +325,7 @@ class MGMap {
             this.window.mapManager.updateFoundLocationsStyle();
         }
 
+        this._updatePopup();
         this.store.updateFoundLocationsCount(0); // Force react update
         this.store.toggleCategories([]); // Force react update
     }
@@ -571,29 +401,10 @@ class MGMap {
         return this.#eventTarget.addEventListener(type, callback);
     }
 
-    off(type) { 
+    off(type) {
         return this.#eventTarget.removeEventListener(type, callback);
     }
 }
 
 
-let mgMap
-if (window.store) {
-    if (!window.mg_pro_unlocker_loaded && !window.config.presetsEnabled) {
-        this.window.toastr.error("MapGeniePro Unlock:\nExtension was to slow to enable presets, please try again.");
-    }
-
-    mgMap = new MGMap(window);
-    mgMap.load().then(() => {
-        console.log("Map hijacker loaded");
-
-        // Listen for page focus
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState == "visible") {
-                mgMap.load();
-            }
-        });
-
-        window.addEventListener("mg:mapdata_changed", mgMap.load.bind(mgMap));
-    });
-}
+module.exports = { MGMap }

@@ -1,3 +1,6 @@
+const { MGApiFilter } = require("./filters");
+const { MGMap } = require("./map/main");
+
 class MGGuide {
     #apiFilter
 
@@ -100,24 +103,26 @@ class MGGuide {
 }
 
 
-if (!window.mg_pro_unlocker_loaded) {
-    window.toastr.error("MapGeniePro Unlock:\nExtension was to slow set some options, please try again.");
+module.exports = function () {
+    if (!window.mg_pro_unlocker_loaded) {
+        window.toastr.error("MapGeniePro Unlock:\nExtension was to slow set some options, please try again.");
+    }
+
+    let mgGuide = new MGGuide(window);
+    mgGuide._setupMap().then(() => {
+        mgGuide.load().then(() => {
+            console.log("Guide hijacker loaded");
+        });
+
+        // Listen for page focus
+        this.document.addEventListener('visibilitychange', () => {
+            if (this.document.visibilityState == "visible") {
+                mgGuide.load();
+            }
+        });
+
+        window.addEventListener("mg:mapdata_changed", mgGuide.load.bind(mgGuide));
+    });
+
+    window.mgGuide = mgGuide;
 }
-
-// window.axios = axios;
-
-let mgGuide = new MGGuide(window);
-mgGuide._setupMap().then(() => {
-    mgGuide.load().then(() => {
-        console.log("Guide hijacker loaded");
-    });
-
-    // Listen for page focus
-    this.document.addEventListener('visibilitychange', () => {
-        if (this.document.visibilityState == "visible") {
-            mgGuide.load();
-        }
-    });
-
-    window.addEventListener("mg:mapdata_changed", mgGuide.load.bind(mgGuide));
-});

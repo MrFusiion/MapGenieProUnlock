@@ -1,25 +1,27 @@
 function send(action, data, options={ all: false }) {
     let queryOptions = options.all && {} || { active: true, currentWindow: true };
-    return chrome.tabs.query(queryOptions).then(tabs => {
-        return Promise.all(tabs.map(tab => {
-            return new Promise((resolve, reject) => {
-                chrome.tabs.sendMessage(tab.id, { action, data }, (res) => {
-                    var lastError = chrome.runtime.lastError;
-                    if (lastError) {
-                        reject(lastError);
-                    } else {
-                        resolve(res);
-                    }
+    return new Promise((resolve, reject) => {
+        chrome.tabs.query(queryOptions, tabs => {
+            Promise.all(tabs.map(tab => {
+                return new Promise((resolve, reject) => {
+                    chrome.tabs.sendMessage(tab.id, { action, data }, (res) => {
+                        var lastError = chrome.runtime.lastError;
+                        if (lastError) {
+                            reject(lastError);
+                        } else {
+                            resolve(res);
+                        }
+                    });
+                }).catch((err) => {
+                    return new Error(err);
                 });
-            }).catch((err) => {
-                return new Error(err);
-            });
-        })).then((results) => {
-            if (queryOptions.active && queryOptions.currentWindow) {
-                return results[0];
-            }
-            return results;
-        }).catch(console.log);
+            })).then((results) => {
+                if (queryOptions.active && queryOptions.currentWindow) {
+                    resolve(results[0]);
+                }
+                resolve(results);
+            })
+        });
     });
 }
 
@@ -64,18 +66,17 @@ $clearBtn.click(() => {
 });
 
 
-
+const IS_CHROME_EXTENSION = typeof chrome !== "undefined";
 const MG_CONFIG = {};
 const DEV_BUILD = false;
-const { MANIFEST, OPTIONS_URL, IS_CHROME_EXTENSION } = (function() {
-    if (chrome && chrome.runtime && chrome.runtime.getManifest) {
+const { MANIFEST, OPTIONS_URL } = (function() {
+    if (IS_CHROME_EXTENSION && chrome.runtime && chrome.runtime.getManifest) {
         return {
             MANIFEST    : chrome.runtime.getManifest(),
             OPTIONS_URL : chrome.runtime.getURL("ui/options.json"),
-            IS_CHROME_EXTENSION: true
         };
     }
-    return { MANIFEST: { version: "0.0.0", author: "me" }, OPTIONS_URL: "options.json", IS_CHROME_EXTENSION: false };
+    return { MANIFEST: { version: "0.0.0", author: "me" }, OPTIONS_URL: "options.json" };
 })();
 
 
@@ -84,13 +85,18 @@ $("#author").text(`by ${MANIFEST.author}`);
 
 
 let $reloadButton = $(".reload-button");
+let $mapgenieButton = $(".mapgenie-button");
 if (DEV_BUILD) {
     $reloadButton.click(() => {
         send("reload_window").then(() => {
             chrome.runtime.reload();
         });
     });
+    $mapgenieButton.hide();
 } else {
+    $mapgenieButton.click(() => {
+        chrome.tabs.create({ url: "https://mapgenie.io" });
+    });
     $reloadButton.hide();
 }
 
@@ -129,7 +135,7 @@ fetch(OPTIONS_URL)
                 });
 
                 let $label = $optionElement.find("span[data-tooltip]");
-                $optionElement.on("mouseover", function() {
+                $optionElement.find(".info").on("mouseover", function() {
                     $label.addClass("hover");
                 }).on("mouseout", function() {
                     $label.removeClass("hover");
@@ -176,3 +182,5 @@ fetch(OPTIONS_URL)
     .catch(function (error) {
         console.error(error);
     });
+
+console.log("Hello World");
