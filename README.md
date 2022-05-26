@@ -4,10 +4,6 @@ The extension is only tested on the [DL2 villedor Map](https://mapgenie.io/dying
 and works fine so far. But I'm pretty sure it will work on other maps too.<br>
 The extenions should work on both the maps and the guides(tools).<br>
 <br>
-*Firefox support is added, but i'm not completly sure if you can install local packages permantly or without the firefox development browser*<br>
-*If you know more about how to install firefox extension properly pls let me know.*<br>
-*If you are having trouble installing the Firefox version, you can always use the chrome version on Edge, which comes pre-installed on Windows*<br>
-<br>
 *NOTE: this is my first chrome extension I made, so don't mind some minor mistakes*
 
 ## Maybe Future
