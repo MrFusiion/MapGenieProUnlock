@@ -40,3 +40,8 @@
       * G button added on popup.html that brings you to https://mapgenie.io mainpage.
       * Fixed the found checkbox on the map selected location popup.
       * Fixed an issue with the ```presets allways enabled``` setting crashing the `New World` map.
+   * #### 4.2   
+      * Fixed issue #3: Adding/Deleting Notes.
+      * Fixed issue #4: Direct link to mark.
+      * Fixed issue: Default preset disappears.
+      * Left the firefox build in the build folder.

@@ -13,7 +13,8 @@ class MGApiFilter {
     }
 
     _filter(f, handlerName) {
-        return (str, data) => {
+        return (...args) => {
+            const [str, data] = args;
             if (this.hasOwnProperty(handlerName)) {
                 for (let apiurl of MGApiFilter.#matches) {
                     if (str.match(apiurl)) {
@@ -25,7 +26,7 @@ class MGApiFilter {
             } else {
                 console.warn(`MGApiFilter: No handler for ${handlerName} on`, this);
             }
-            return f(...arguments);
+            return f(...args);
         }
     }
 }

@@ -7,7 +7,7 @@ module.exports = function () {
     }
 
     let mgMap = new MGMap(window);
-    mgMap.load().then(() => {
+    mgMap.init().then(() => {
         console.log("Map hijacker loaded");
 
         // Listen for page focus

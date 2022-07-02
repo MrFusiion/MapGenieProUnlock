@@ -95,7 +95,8 @@ class MGMap {
                         }
                         postData = { data: Object.assign({ id: id }, postData) };
                         data.presets[id] = postData.data;
-                        data.presets_order.push(id)
+                        if (data.presets_order.length == 0) data.presets_order.push(-1);
+                        data.presets_order.push(id);
                         return data;
                     });
                     break;
@@ -124,6 +125,7 @@ class MGMap {
                     this.#storage.updateData(data => {
                         let index = data.presets_order.indexOf(id);
                         if (index !== -1) data.presets_order.splice(index, 1);
+                        if (data.presets_order.length == 1) data.presets_order = []
                         delete data.presets[id];
                         return data;
                     });
@@ -148,7 +150,7 @@ class MGMap {
                         </div>
                     </div>
                 </div>
-                <hr>`);
+            <hr>`);
 
             $totalProgress.insertBefore($(this.window.document).find("#user-panel > div:first-of-type .category-progress"));
             $totalProgress.find(".progress-item").click(this.store.showAllCategories.bind(this.store));
@@ -223,6 +225,7 @@ class MGMap {
                                     const found = !this.store.isMarked(locId);
                                     this.store.markLocation(locId, found);
                                     this.#storage.updateData(data => {
+                                        console.log(data);
                                         if (found && !data.locations[locId]) {
                                             data.locations[locId] = true;
                                             this.#storage.local.foundLocationsCount += 1;
@@ -242,7 +245,7 @@ class MGMap {
 
             observer.observe(this.document.querySelector(".mapboxgl-map"), { childList: true });
 
-            let $markControls = $(`
+            const $markControls = $(`
                 <div class="mapboxgl-ctrl mapboxgl-ctrl-group">
                     <button class="mg-mark-all-control" type="button" title="Mark all" aria-label="Mark all" aria-disabled="false">
                         <span class="mapboxgl-ctrl-icon ion-md-add-circle" aria-hidden="true"></span>
@@ -326,8 +329,7 @@ class MGMap {
         }
 
         this._updatePopup();
-        this.store.updateFoundLocationsCount(0); // Force react update
-        this.store.toggleCategories([]); // Force react update
+        // this.store._update(); // Force react update
     }
 
     getCategoryId(id) {
@@ -343,6 +345,21 @@ class MGMap {
         if ((value || false) != checked) {
             $div.click();
         }
+    }
+
+    init() {
+        const visibleLocations = this.window.visibleLocations;
+        const visibleCategories = this.window.visibleCategories;
+        this.store.toggleCategories([]); // Force react update
+        this.store.updateFoundLocationsCount(0); // Force react update
+        return this.load().then(() => {
+            if (visibleLocations || visibleCategories) {
+                this.window.mapManager.applyFilter({
+                    locationIds: visibleLocations && Object.keys(visibleLocations || {}).map(parseInt),
+                    categoryIds: visibleCategories && Object.keys(visibleCategories || {}).map(parseInt)
+                })
+            }
+        });
     }
 
     load() {
@@ -382,9 +399,13 @@ class MGMap {
 
                 let curPresets = this.store.state.user.presets;
                 let presets = Object.values(this.#storage.data.presets);
-                for (let preset of curPresets) {
-                    this.store.removePreset(preset.id);
+                if (curPresets[0]) {
+                    for (let preset of curPresets) {
+                        this.store.removePreset(preset.id);
+                    }
+                    this.store.addPreset(curPresets[0]);
                 }
+
                 for (let preset of presets) {
                     this.store.addPreset(preset);
                 }

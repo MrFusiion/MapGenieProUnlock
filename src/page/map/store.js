@@ -79,6 +79,18 @@ class MGMapStore {
         }
     }
 
+    showSpecificLocations(locations = [], categories = []) {
+        console.log(locations.map(id => parseInt(id)), categories.map(id => parseInt(id)));
+        this._dispatch("HIVE:MAP:SHOW_SPECIFIC_LOCATIONS", {
+            locationIds: locations.map(id => parseInt(id)),
+            categoryIds: categories.map(id => parseInt(id))
+        })
+    }
+
+    setSelectedLocation(locationId) {
+        this._dispatch("HIVE:MAP:SET_SELECTED_LOCATION", { locationId });
+    }
+
     trackCategory(id, track = true) {
         let type = track && "HIVE:USER:ADD_TRACKED_CATEGORY" || "HIVE:USER:REMOVE_TRACKED_CATEGORY";
         this._dispatch(type, { categoryId: parseInt(id) });
@@ -104,6 +116,10 @@ class MGMapStore {
 
     toggleCategories(categoryIds) {
         this._dispatch("HIVE:MAP:TOGGLE_CATEGORIES", { categoryIds });
+    }
+
+    setSelectedCategory(categoryId) {
+        this._dispatch("HIVE:MAP:SET_SELECTED_CATEGORY", { selectedCategory: categoryId })
     }
 
     updateFoundLocationsCount(count = 0) {
@@ -135,7 +151,11 @@ class MGMapStore {
     }
 
     setActivePresets(activePresets) {
-        this._dispatch("HIVE:MAP:SET_ACTIVE_PRESETS", { activePresets })
+        this._dispatch("HIVE:MAP:SET_ACTIVE_PRESETS", { activePresets });
+    }
+
+    showNotes(visible) {
+        this._dispatch("HIVE:USER:SHOW_NOTES", { visible });
     }
 }
 

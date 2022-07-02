@@ -1,4 +1,5 @@
 package-lock.json
 .env
 node_modules/
-build/
+build/chrome
+build/firefox

@@ -20,6 +20,7 @@ class MGMapStorage {
             presets: {},
             presets_order: [],
             visible_categories: {},
+            notes: {},
         },
 
         settings: {
