@@ -37,6 +37,7 @@ class MGMap {
 
         this.#storageFilter = new MGStorageFilter(this.window);
         this.#storageFilter.set = (key, match) => {
+            // console.log("Set", key, match)
             if (key === "visible_categories") {
                 let id = match.match(/(\d+)$/)[1];
                 this.#storage.updateData(data => {
@@ -52,18 +53,17 @@ class MGMap {
             return false;
         }
         this.#storageFilter.remove = (key, match) => {
+            // console.log("Remove", key, match)
             if (key === "visible_categories") {
                 let id = match.match(/(\d+)$/)[1];
                 this.#storage.updateData(data => {
+                    // console.log(data.visible_categories);
                     delete data.visible_categories[id];
                     return data;
                 });
             } else if (key === "remember_categories") {
-                this.#storage.updateSettings(settings => {
-                    settings.remember_categories = false;
-                    return settings;
-                });
                 this.#storage.update(({ settings, data }) => {
+                    // console.log(settings, data);
                     settings.remember_categories = false;
                     for (let key in data.visible_categories) delete data.visible_categories[key];
                     return { settings, data };
@@ -173,6 +173,9 @@ class MGMap {
             // Add marker controls
             let markControl = (found) => {
                 return () => {
+                    let ans = confirm(`Are you sure you want to ${!found && "un" || ""}mark all visible markers on the map?`);
+                    if (!ans) return;
+
                     let c = 0;
                     this.#storage.updateData(data => {
                         for (let loc of this.store.state.map.locations) {
@@ -225,7 +228,7 @@ class MGMap {
                                     const found = !this.store.isMarked(locId);
                                     this.store.markLocation(locId, found);
                                     this.#storage.updateData(data => {
-                                        console.log(data);
+                                        // console.log(data);
                                         if (found && !data.locations[locId]) {
                                             data.locations[locId] = true;
                                             this.#storage.local.foundLocationsCount += 1;

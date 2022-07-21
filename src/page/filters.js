@@ -38,11 +38,11 @@ class MGStorageFilter {
     constructor(window) {
         let _localStorage = window.localStorage;
 
-        let setItem = _localStorage.setItem.bind(_localStorage);
-        _localStorage.setItem = this._filter(setItem, "set");
+        let setItem = _localStorage.__proto__.setItem.bind(_localStorage);
+        _localStorage.__proto__.setItem = this._filter(setItem, "set");
 
-        let removeItem = _localStorage.removeItem.bind(_localStorage);
-        _localStorage.removeItem = this._filter(removeItem, "remove");
+        let removeItem = _localStorage.__proto__.removeItem.bind(_localStorage);
+        _localStorage.__proto__.removeItem = this._filter(removeItem, "remove");
     }
 
     _filter(f, handle) {

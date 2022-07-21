@@ -1,20 +1,30 @@
 [
+    "./images",
+    "./lib/jquery.js",
+    "./popup/style.css",
+    "./popup/index.html",
+    "./data.js",
+    "./options.json",
+    "./css/fontawesome/all.min.css", 
+    "./css/webfonts/fa-solid-900.ttf",
     { 
         "file": "./page.js",
         "action": "bundle",
         "args": ["./src/page/index.js"]
     },
-    "./page.css",
-    "./images",
-    "./ui",
     {
-        "file": "./data.js",
+        "file": "./page.css",
         "action": "rename",
-        "args": ["./src/main/data.js"]
+        "args": ["./src/page/style.css"]
     },
     {
         "file": "./main.js", 
         "action": "bundle",
         "args": ["./src/main/index.js"]
+    },
+    {
+        "file": "./popup/index.js",
+        "action": "bundle",
+        "args": ["./src/popup/index.js"]
     }
 ]

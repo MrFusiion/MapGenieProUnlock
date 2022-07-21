@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "browser_action": {
-        "default_popup": "ui/popup.html"
+        "default_popup": "popup/index.html"
     },
     "permissions": [
         "storage",
@@ -20,7 +20,10 @@
         "page.js",
         "page.css",
         "data.js",
-        "ui/options.json"
+        "css/**.css",
+        "css/**.ttf",
+        "css/**.woff2",
+        "options.json"
     ],
     "icons": {
         "16": "/images/mapgenie_pro_16.png",

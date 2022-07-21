@@ -76,18 +76,6 @@ function objDiff(obj1, obj2) {
 }
 
 
-window.addEventListener("message", (e) => {
-    let data = e.data;
-    if (data.type === "mg:error") {
-        if (toastr) {
-            toastr.error(data.message);
-        } else {
-            console.error(data.message);
-        }
-    }
-});
-
-
 module.exports = {
     deepCopy,
     objectSet,

@@ -45,3 +45,6 @@
       * Fixed issue #4: Direct link to mark.
       * Fixed issue: Default preset disappears.
       * Left the firefox build in the build folder.
+   * #### 4.3
+      * Fixed issue #6: Loading extension settings was not correctly handle when undifiend.
+      * Fixed issue #7: Firefox remember visible categories not working.

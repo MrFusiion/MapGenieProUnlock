@@ -1,9 +1,10 @@
 const fs = require('fs');
+const archiver = require('archiver');
 const path = require('path');
 const temp = require('temp');
 const browserify = require('browserify');
 const webExt = require('web-ext');
-var pjson = require('../package.json');
+const pjson = require('../package.json');
 
 temp.track();
 
@@ -20,8 +21,8 @@ async function bundleScript(file) {
     const b = browserify();
     b.add(file);
 
-    return streamToString(b.bundle()).catch(() => {
-        throw new Error(`Failed to bundle ${file}`);
+    return streamToString(b.bundle()).catch((e) => {
+        throw new Error(`Failed to bundle ${file}: ${e}`);
     });
 }
 
@@ -34,7 +35,26 @@ function mergeManifest(...manifests) {
     return JSON.stringify(merged, null, 2);
 }
 
+function zip(folder, dest) {
+    var output = fs.createWriteStream(dest);
+    var archive = archiver("zip");
+
+    archive.on("error", function (err) {
+        throw err;
+    });
+
+    archive.pipe(output);
+    archive.directory(folder, false);
+    archive.finalize();
+}
+
 function signFirefox(folder, options) {
+    console.log(folder)
+    if (options.debug) {
+        zip(folder, path.resolve(path.dirname(folder), "firefox.zip"));
+        return
+    }
+
     let { KEY: key, SECRET: secret } = require('dotenv').config().parsed;
     key = key || options['api-key'];
     secret = secret || options['api-secret'];

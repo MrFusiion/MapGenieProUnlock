@@ -25,6 +25,10 @@ try {
             name: 'api-key',
         }).addOption({
             name: 'api-secret',
+        }).addOption({
+            name: 'debug',
+            aliases: ['d'],
+            flag: true
         })
         .help()
         .parse();
@@ -124,6 +128,7 @@ async function build(options) {
 
     if (post_build) {
         try {
+            // console.log("post build");
             post_build(dest, options);
         } catch (e) {
             console.error("Post-build failed:", e);

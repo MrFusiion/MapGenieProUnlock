@@ -1,3 +1,7 @@
+const { getSettings } = require("../shared/settings");
+
+// class ScriptNotFoundError extends Error { constructor(script) { super(`Script ${JSON.stringify(script)} was not found when observing document`) } };
+
 function getScript({ startsWith, src }) {
     return new Promise((resolve, reject) => {
         function clear() {
@@ -6,7 +10,8 @@ function getScript({ startsWith, src }) {
         }
 
         function loaded() {
-            reject(`Script ${JSON.stringify({ startsWith, src })} was not found when observing document`);
+            // reject(new ScriptNotFoundError({ startsWith, src }));
+            clear();
         }
 
         const observer = new MutationObserver(function (mutations_list) {
@@ -30,6 +35,7 @@ function getScript({ startsWith, src }) {
     });
 }
 
+
 let p_dataScript = Promise.race([
     getScript({ startsWith: "window.mapUrls" }),
     getScript({ startsWith: "window.mapUrl" })
@@ -37,24 +43,22 @@ let p_dataScript = Promise.race([
     parent = script.parentNode;
     script.remove();
     return { script, parent };
-});
+})
 
 
 let p_mapScript = getScript({ src: "map.js" }).then(script => {
-    console.log("map.js found");
+    // console.log("map.js found");
     parent = script.parentNode;
     script.remove();
-    return { script, parent }; 
-});
+    return { script, parent };
+})
 
-chrome.storage.sync.get(["config"], function (data) {
-    let config = data.config;
-    
+getSettings().then(settings => {
     p_dataScript.then(({ script, parent }) => {
-        if (script) {            
+        if (script) {
             parent.append(script)
-            if (config.extension_enabled) {
-                window.sessionStorage.setItem("mg:config:presets_allways_enabled", JSON.stringify(config.presets_allways_enabled || false));
+            if (settings.extension_enabled) {
+                window.sessionStorage.setItem("mg:config:presets_allways_enabled", JSON.stringify(settings.presets_allways_enabled || false));
                 const dataScript = document.createElement("script");
                 dataScript.src = chrome.runtime.getURL("data.js");
                 parent.append(dataScript);
