@@ -3,10 +3,15 @@ const MGMapStorage = require("./storage");
 const { MGStorageFilter, MGApiFilter } = require("../filters");
 const PopupObserver = require("./popupObserver");
 
+//Handlers
+const ApiHandler = require("../api");
+const StorageHandler = require("./storageHandler");
+
 //UI
 const MarkControls = require("./ui/markControls");
 const TotalProgress = require("./ui/totalProgress");
 const ToggleFound = require("./ui/toggleFound");
+
 
 class MGMapMarkEvent extends Event {
     constructor(type, id, marked) {
@@ -20,7 +25,6 @@ class MGMapMarkEvent extends Event {
 class MGMap {
     #eventTarget = new EventTarget();
     #categories; #isMini; #storage;
-    #storageFilter; #apiFilter;
 
     constructor(window, mini = false) {
         if (!window.user) { throw "User is not loggedin!"; }
@@ -41,153 +45,89 @@ class MGMap {
         this.#storage = new MGMapStorage(this.window);
         this.store = new MGMapStore(this.window, this.#storage);
 
-        this.#storageFilter = new MGStorageFilter(this.window);
-        this.#storageFilter.set = (key, match) => {
-            // console.log("Set", key, match)
-            if (key === "visible_categories") {
-                let id = match.match(/(\d+)$/)[1];
-                this.#storage.updateData(data => {
-                    data.visible_categories[id] = true;
-                    return data;
-                });
-            } else if (key === "remember_categories") {
-                this.#storage.updateSettings(settings => {
-                    settings.remember_categories = true;
-                    return settings;
-                });
-            }
-            return false;
-        }
-        this.#storageFilter.remove = (key, match) => {
-            // console.log("Remove", key, match)
-            if (key === "visible_categories") {
-                let id = match.match(/(\d+)$/)[1];
-                this.#storage.updateData(data => {
-                    // console.log(data.visible_categories);
-                    delete data.visible_categories[id];
-                    return data;
-                });
-            } else if (key === "remember_categories") {
-                this.#storage.update(({ settings, data }) => {
-                    // console.log(settings, data);
-                    settings.remember_categories = false;
-                    for (let key in data.visible_categories) delete data.visible_categories[key];
-                    return { settings, data };
-                });
-            }
-            return false;
-        }
+        const storageHandler = new StorageHandler(this.#storage);
+        this.storageFilter = new MGStorageFilter(this.window.localStorage, storageHandler);
 
-        this.#apiFilter = new MGApiFilter(this.window.axios);
-        this.#apiFilter.set = (key, id, postData) => {
-            switch (key) {
-                case "locations":
-                    this._toggleLocation(id);
-                    this._update();
-                case "categories":
-                    id = postData && postData.category || id;
-                    this.#storage.updateData(data => {
-                        data[key][id] = true;
-                        return data;
-                    });
-                    this.#eventTarget.dispatchEvent(new MGMapMarkEvent(`mark-${key}`, id, true));
-                    break;
-                case "presets":
-                    this.#storage.updateData(data => {
-                        let id = 0;
-                        for (let i in data.presets) {
-                            if (id != i) break;
-                            id++;
-                        }
-                        postData = { data: Object.assign({ id: id }, postData) };
-                        data.presets[id] = postData.data;
-                        if (data.presets_order.length == 0) data.presets_order.push(-1);
-                        data.presets_order.push(id);
-                        return data;
-                    });
-                    break;
-                case "presets/reorder":
-                    this.#storage.updateData(data => {
-                        data.presets_order = postData.ordering;
-                        return data;
-                    });
-                    break;
-            }
-            return postData;
-        }
-        this.#apiFilter.remove = (key, id, data) => {
-            switch (key) {
-                case "locations":
-                    this._toggleLocation(id);
-                    this._update();
-                case "categories":
-                    this.#storage.updateData(data => {
-                        delete data[key][id];
-                        return data;
-                    });
-                    this.#eventTarget.dispatchEvent(new MGMapMarkEvent(`mark-${key}`, id, false));;
-                    break;
-                case "presets":
-                    this.#storage.updateData(data => {
-                        let index = data.presets_order.indexOf(id);
-                        if (index !== -1) data.presets_order.splice(index, 1);
-                        if (data.presets_order.length == 1) data.presets_order = []
-                        delete data.presets[id];
-                        return data;
-                    });
-                    break;
-            }
-            return data;
-        }
+        const apiHandler = new ApiHandler(this.store, this.#storage);
+        this.apiFilter = new MGApiFilter(this.window.axios, apiHandler);
+
+        apiHandler.put.on("locations", ({ id }) => {
+            this.store.markLocation(id, true);
+            this._update();
+            this.#eventTarget.dispatchEvent(new MGMapMarkEvent(`mark-locations`, id, true));
+        });
+        
+        apiHandler.delete.on("locations", ({ id }) => {
+            this.store.markLocation(id, false);
+            this._update();
+            this.#eventTarget.dispatchEvent(new MGMapMarkEvent(`mark-locations`, id, false));
+        });
+
+        apiHandler.put.on("categories", ({ id }) => {
+            this.#eventTarget.dispatchEvent(new MGMapMarkEvent(`mark-categories`, id, true));
+        })
+
+        apiHandler.delete.on("categories", ({ id }) => {
+            this.#eventTarget.dispatchEvent(new MGMapMarkEvent(`mark-categories`, id, false));
+        })
 
         if (mini) {
-            //Add show all button on guide map
             $(`<button class="btn btn-outline-secondary" style="margin-left: 5px;">Show All</button>`)
                 .click(this.showAll.bind(this)).appendTo($(this.window.document).find("#mini-header .d-flex"));
-        } else {
-
-            //Create total progress element on the right
-            this.totalProgress = new TotalProgress(this.window);
-
-            //Overwrite togglefound element provided by mapgenie because it doesn't show the correct count
-            this.toggleFound = new ToggleFound(this.window);
-
-            //Observe if popup gets added and listen when clicked
-            this.popupObserver = new PopupObserver(this.store);
-            this.popupObserver.click((e) => {
-                this._toggleLocation(e.locId);
-                this._update();
-            });
-            this.popupObserver.observe(this.window);
-
-            //Add marker controls at the right corner of the map
-            // 1 markAll: Marks all visible markers
-            // 2 unmarkAll: Unmarks all visible markers
-            this.markControls = new MarkControls(this.window);
-            this.markControls.click((found) => {
-                let ans = confirm(`Are you sure you want to ${!found && "un" || ""}mark all visible markers on the map?`);
-                if (!ans) return;
-
-                let c = 0;
-                this.#storage.updateData(data => {
-                    for (let loc of this.store.state.map.locations) {
-                        if (loc.category.visible) {
-                            if (found && !data.locations[loc.id]) {
-                                c++;
-                                data.locations[loc.id] = true;
-                            } else if (!found && data.locations[loc.id]) {
-                                c--;
-                                delete data.locations[loc.id];
-                            }
-                            this.store.markLocation(loc.id, found);
-                        }
-                    }
-                    return data;
-                });
-                this.#storage.local.foundLocationsCount += c;
-                this._update();
-            });
+            return;
         }
+
+        //Create total progress element on the right
+        this.totalProgress = new TotalProgress(this.window);
+
+        //Overwrite togglefound element provided by mapgenie because it doesn't show the correct count
+        this.toggleFound = new ToggleFound(this.window);
+
+        //Observe if popup gets added and listen when clicked
+        this.popupObserver = new PopupObserver(this.store);
+        this.popupObserver.click((e) => {
+            const id = e.locId;
+            this.#storage.updateData(data => {
+                if (found && !data.locations[id]) {
+                    data.locations[id] = true;
+                    this.#storage.local.foundLocationsCount += 1;
+                } else if (!found && data.locations[id]) {
+                    delete data.locations[id];
+                    this.#storage.local.foundLocationsCount -= 1;
+                }
+                return data;
+            });
+            this._update();
+        });
+        this.popupObserver.observe(this.window);
+
+        //Add marker controls at the right corner of the map
+        // 1 markAll: Marks all visible markers
+        // 2 unmarkAll: Unmarks all visible markers
+        this.markControls = new MarkControls(this.window);
+        this.markControls.click((found) => {
+            let ans = confirm(`Are you sure you want to ${!found && "un" || ""}mark all visible markers on the map?`);
+            if (!ans) return;
+
+            let c = 0;
+            this.#storage.updateData(data => {
+                for (let loc of this.store.state.map.locations) {
+                    if (loc.category.visible) {
+                        if (found && !data.locations[loc.id]) {
+                            c++;
+                            data.locations[loc.id] = true;
+                        } else if (!found && data.locations[loc.id]) {
+                            c--;
+                            delete data.locations[loc.id];
+                        }
+                        this.store.markLocation(loc.id, found);
+                    }
+                }
+                return data;
+            });
+            this.#storage.local.foundLocationsCount += c;
+            this._update();
+        });
     }
 
     set categories(categories) {
@@ -215,16 +155,7 @@ class MGMap {
     _toggleLocation(id) {
         const found = !this.store.isMarked(id);
         this.store.markLocation(id, found);
-        this.#storage.updateData(data => {
-            if (found && !data.locations[id]) {
-                data.locations[id] = true;
-                this.#storage.local.foundLocationsCount += 1;
-            } else if (!found && data.locations[id]) {
-                delete data.locations[id];
-                this.#storage.local.foundLocationsCount -= 1;
-            }
-            return data;
-        });
+
     }
 
     _update() {
