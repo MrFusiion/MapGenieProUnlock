@@ -3,11 +3,6 @@ const { isList, isMap, isGuide } = require("../page/site");
 const { getStatus, reloadWindow, importMapData, exportMapData, clearMapData } = require("./handlers");
 const { getSettings } = require("../shared/settings");
 
-let HIDE_ELEMET_SELECTORS = [
-    "#blobby-left", ".upgrade", ".progress-buttons ~ .inset",               // map
-    "#button-upgrade", "p ~ h5 ~ p ~ h4 ~ blockquote", "p ~ h5 ~ p ~ h4"    // guide
-];
-
 
 function getURL(url) {
     return (url.startsWith("https://") || url.startsWith("http://")) && url || chrome.runtime.getURL(url);
@@ -40,14 +35,17 @@ getSettings().then((settings) => {
     waitForDomLoaded().then(() => {
         if (settings.extension_enabled && (isList() || isMap() || isGuide())) {
 
-            for (let selector of Object.values(HIDE_ELEMET_SELECTORS)) {
+            //Hide non-pro elements
+            for (let selector of Object.values([
+                "#blobby-left", ".upgrade", ".progress-buttons ~ .inset",               // map
+                "#button-upgrade", "p ~ h5 ~ p ~ h4 ~ blockquote", "p ~ h5 ~ p ~ h4"    // guide
+            ])) {
                 for (let element of document.querySelectorAll(selector))
                     element.style.display = "none";
             }
-
-            injectStyle("css/fontawesome/all.min.css");
-            injectStyle("page.css");
-            injectCode("page.js");
+            
+            injectStyle("page.css"); // src/page/page.css
+            injectCode("page.js"); //src/page folder will be compiled into one script called page.js
         }
     });
 });
