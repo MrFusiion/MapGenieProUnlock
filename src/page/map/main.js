@@ -1,6 +1,12 @@
 const MGMapStore = require("./store");
 const MGMapStorage = require("./storage");
 const { MGStorageFilter, MGApiFilter } = require("../filters");
+const PopupObserver = require("./popupObserver");
+
+//UI
+const MarkControls = require("./ui/markControls");
+const TotalProgress = require("./ui/totalProgress");
+const ToggleFound = require("./ui/toggleFound");
 
 class MGMapMarkEvent extends Event {
     constructor(type, id, marked) {
@@ -135,132 +141,52 @@ class MGMap {
         }
 
         if (mini) {
+            //Add show all button on guide map
             $(`<button class="btn btn-outline-secondary" style="margin-left: 5px;">Show All</button>`)
                 .click(this.showAll.bind(this)).appendTo($(this.window.document).find("#mini-header .d-flex"));
         } else {
-            // Add total progress bar
-            let $totalProgress = $(`
-                <div class="progress-item-wrapper">
-                    <div class="progress-item" id="total-progress" style="margin-right: 5%;">
-                        <span class="icon">0.00%</span>
-                        <span class="title"></span>
-                        <span class="counter">0/0</span>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" role="progressbar" style="width: 0%;"></div>
-                        </div>
-                    </div>
-                </div>
-            <hr>`);
 
-            $totalProgress.insertBefore($(this.window.document).find("#user-panel > div:first-of-type .category-progress"));
-            $totalProgress.find(".progress-item").click(this.store.showAllCategories.bind(this.store));
+            //Create total progress element on the right
+            this.totalProgress = new TotalProgress(this.window);
 
-            this.totalProgress = {
-                icon: $totalProgress.find(".icon").get(0),
-                counter: $totalProgress.find(".counter").get(0),
-                bar: $totalProgress.find(".progress-bar").get(0),
-            }
+            //Overwrite togglefound element provided by mapgenie because it doesn't show the correct count
+            this.toggleFound = new ToggleFound(this.window);
 
-            // Add toggle found button
-            $(this.window.document).find("#toggle-found").hide();
-            this.toggleFound = $(`<span id="toggle-found" class="button-toggle"><i class="icon ui-icon-show-hide"></i>Found Locations (0)</span>`)
-                .insertAfter($(this.window.document).find("#toggle-found"))
-                .click(() => {
-                    this.window.mapManager.setFoundLocationsShown(!this.toggleFound.classList.toggle("disabled"));
-                })
-                .get(0);
-
-            // Add marker controls
-            let markControl = (found) => {
-                return () => {
-                    let ans = confirm(`Are you sure you want to ${!found && "un" || ""}mark all visible markers on the map?`);
-                    if (!ans) return;
-
-                    let c = 0;
-                    this.#storage.updateData(data => {
-                        for (let loc of this.store.state.map.locations) {
-                            if (loc.category.visible) {
-                                if (found && !data.locations[loc.id]) {
-                                    c++;
-                                    data.locations[loc.id] = true;
-                                } else if (!found && data.locations[loc.id]) {
-                                    c--;
-                                    delete data.locations[loc.id];
-                                }
-                                this.store.markLocation(loc.id, found);
-                            }
-                        }
-                        return data;
-                    });
-                    this.#storage.local.foundLocationsCount += c;
-                    this._update();
-                }
-
-            }
-
-            // Overide found-checkbox
-            const observer = new MutationObserver((mutations_list) => {
-                mutations_list.forEach((mutation) => {
-                    mutation.removedNodes.forEach((node) => {
-                        if (node.classList.contains("mapboxgl-popup")) {
-                            this._popup = null;
-                        }
-                    });
-
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.classList.contains("mapboxgl-popup")) {
-                            const label = node.querySelector("label[for='found-checkbox']");
-
-                            const button = label && label.parentNode;
-                            if (button) {
-                                const locId = this.store.state.map.selectedLocation?.id;
-
-                                const cloneBtn = button.cloneNode(true);
-                                button.addEventListener("click", markControl(true));
-                                $(cloneBtn).insertAfter(button);
-                                button.style.display = "none";
-
-                                const input = cloneBtn.querySelector("input[type='checkbox']");
-                                // input.checked = this.store.isMarked(locId);
-
-                                this._popup = { input, locId };
-                                cloneBtn.addEventListener("click", () => {
-                                    const found = !this.store.isMarked(locId);
-                                    this.store.markLocation(locId, found);
-                                    this.#storage.updateData(data => {
-                                        // console.log(data);
-                                        if (found && !data.locations[locId]) {
-                                            data.locations[locId] = true;
-                                            this.#storage.local.foundLocationsCount += 1;
-                                        } else if (!found && data.locations[locId]) {
-                                            delete data.locations[locId];
-                                            this.#storage.local.foundLocationsCount -= 1;
-                                        }
-                                        return data;
-                                    });
-                                    this._update();
-                                });
-                            }
-                        }
-                    });
-                });
+            //Observe if popup gets added and listen when clicked
+            this.popupObserver = new PopupObserver(this.store);
+            this.popupObserver.click((e) => {
+                this._toggleLocation(e.locId);
+                this._update();
             });
+            this.popupObserver.observe(this.window);
 
-            observer.observe(this.document.querySelector(".mapboxgl-map"), { childList: true });
+            //Add marker controls at the right corner of the map
+            // 1 markAll: Marks all visible markers
+            // 2 unmarkAll: Unmarks all visible markers
+            this.markControls = new MarkControls(this.window);
+            this.markControls.click((found) => {
+                let ans = confirm(`Are you sure you want to ${!found && "un" || ""}mark all visible markers on the map?`);
+                if (!ans) return;
 
-            const $markControls = $(`
-                <div class="mapboxgl-ctrl mapboxgl-ctrl-group">
-                    <button class="mg-mark-all-control" type="button" title="Mark all" aria-label="Mark all" aria-disabled="false">
-                        <span class="mapboxgl-ctrl-icon ion-md-add-circle" aria-hidden="true"></span>
-                    </button>
-                    <button class="mg-unmark-all-control" type="button" title="UnMark all" aria-label="Unmark all" aria-disabled="false">
-                        <span class="mapboxgl-ctrl-icon ion-md-close-circle" aria-hidden="true"></span>
-                    </button>
-                </div>`);
-
-            $markControls.insertAfter($(this.window.document).find("#add-note-control"));
-            $markControls.find(".mg-mark-all-control").click(markControl(true));
-            $markControls.find(".mg-unmark-all-control").click(markControl(false));
+                let c = 0;
+                this.#storage.updateData(data => {
+                    for (let loc of this.store.state.map.locations) {
+                        if (loc.category.visible) {
+                            if (found && !data.locations[loc.id]) {
+                                c++;
+                                data.locations[loc.id] = true;
+                            } else if (!found && data.locations[loc.id]) {
+                                c--;
+                                delete data.locations[loc.id];
+                            }
+                            this.store.markLocation(loc.id, found);
+                        }
+                    }
+                    return data;
+                });
+                this.#storage.local.foundLocationsCount += c;
+                this._update();
+            });
         }
     }
 
@@ -287,52 +213,35 @@ class MGMap {
     }
 
     _toggleLocation(id) {
-        const isFound = this.store.isMarked(id);
+        const found = !this.store.isMarked(id);
+        this.store.markLocation(id, found);
         this.#storage.updateData(data => {
-            if (isFound) {
-                delete data.locations[id];
-                this.#storage.local.foundLocationsCount--;
-            } else {
+            if (found && !data.locations[id]) {
                 data.locations[id] = true;
-                this.#storage.local.foundLocationsCount++;
+                this.#storage.local.foundLocationsCount += 1;
+            } else if (!found && data.locations[id]) {
+                delete data.locations[id];
+                this.#storage.local.foundLocationsCount -= 1;
             }
             return data;
         });
-        this.store.markLocation(id, !isFound);
-    }
-
-    _updatePopup() {
-        if (!this._popup) return;
-        const { input, locId } = this._popup;
-        //console.log(this.store.isMarked(locId), locId);
-        input.checked = this.store.isMarked(locId);
     }
 
     _update() {
-        let count = this.#storage.local.foundLocationsCount;
-        let total = this.window.mapData.totalLocations
+        const count = this.#storage.local.foundLocationsCount;
+        const total = this.window.mapData.totalLocations
             || (this.window.mapData.totalLocations = Object.keys(this.store.state.map.locations).length);
+        
+        //Update totalProress and togglefound counter
+        this?.totalProgress.update(count, total);
+        this?.toggleFound.update(count);
 
-        if (this.totalProgress) {
-            let percent = count / total * 100;
-            this.totalProgress.icon.textContent = `${percent.toFixed(2)}%`;
-            this.totalProgress.counter.textContent = `${count} / ${total}`;
-            this.totalProgress.bar.style.width = `${percent}%`;
-        }
+        //Update mapManager
+        this.window.mapManager.updateFoundLocationsStyle();
 
-        if (this.toggleFound) {
-            this.toggleFound.innerHTML = `
-                <i class="icon ui-icon-show-hide"></i>
-                Found Locations(${count})
-            `;
-        }
-
-        if (!this.window.mapManager.showFoundLocations) {
-            this.window.mapManager.updateFoundLocationsStyle();
-        }
-
-        this._updatePopup();
-        // this.store._update(); // Force react update
+        //Update popup
+        const popup = this.popupObserver.currentPopup;
+        this.popupObserver.currentPopup?.update(this.store.isMarked(popup?.locId));
     }
 
     getCategoryId(id) {
