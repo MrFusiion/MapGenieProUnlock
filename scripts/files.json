@@ -1,12 +1,11 @@
 [
     "./images",
-    "./lib/jquery.js",
+    "./lib",
+    "./popup/css",
     "./popup/style.css",
     "./popup/index.html",
     "./data.js",
     "./options.json",
-    "./css/fontawesome/all.min.css", 
-    "./css/webfonts/fa-solid-900.ttf",
     { 
         "file": "./page.js",
         "action": "bundle",

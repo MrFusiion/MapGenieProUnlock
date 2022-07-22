@@ -8,6 +8,7 @@ const pjson = require('../package.json');
 
 temp.track();
 
+//Converts a stream to a string
 function streamToString(stream) {
     const chunks = [];
     return new Promise((resolve, reject) => {
@@ -17,6 +18,7 @@ function streamToString(stream) {
     })
 }
 
+//Bundles .js scripts with require into one script
 async function bundleScript(file) {
     const b = browserify();
     b.add(file);
@@ -26,6 +28,7 @@ async function bundleScript(file) {
     });
 }
 
+//Merges multiple manifest togheter
 function mergeManifest(...manifests) {
     const merged = {};
     for (let manifest of manifests) {
@@ -35,9 +38,11 @@ function mergeManifest(...manifests) {
     return JSON.stringify(merged, null, 2);
 }
 
-function zip(folder, dest) {
-    var output = fs.createWriteStream(dest);
-    var archive = archiver("zip");
+//Zips a folder
+function zip(folder) {
+    const dest = path.resolve(path.dirname(folder), `${path.basename(folder)}.zip`);
+    const output = fs.createWriteStream(dest);
+    const archive = archiver("zip");
 
     archive.on("error", function (err) {
         throw err;
@@ -48,10 +53,11 @@ function zip(folder, dest) {
     archive.finalize();
 }
 
+//Signs the firefox build
 function signFirefox(folder, options) {
     console.log(folder)
     if (options.debug) {
-        zip(folder, path.resolve(path.dirname(folder), "firefox.zip"));
+        zip(folder);
         return
     }
 
@@ -75,8 +81,8 @@ function signFirefox(folder, options) {
     });
 }
 
-
-const manifestInfo = temp.path({ suffix: '.pdf' });
+//Creates a temporary manifest with all info extracted from package.json
+const manifestInfo = temp.path({ suffix: '.json' });
 fs.writeFileSync(manifestInfo, JSON.stringify({
     name: pjson.title,
     version: pjson.version,
@@ -85,8 +91,11 @@ fs.writeFileSync(manifestInfo, JSON.stringify({
     author: pjson.author,
 }), { flag: 'w' });
 
+//Browser extension files/build data
 const files = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'files.json'), 'utf8'));
 module.exports = {
+
+    //Defining all actions
     actions: {
         'bundle': bundleScript,
         'merge-manifest': mergeManifest,
@@ -96,6 +105,8 @@ module.exports = {
     },
 
     browsers: {
+
+        //Chrome build info
         chrome: {
             dest: './chrome',
             source: './src',
@@ -108,7 +119,10 @@ module.exports = {
                     './src/manifest.json'
                 ]
             },
+            post_build: zip
         },
+
+        //Firefox build info
         firefox: {
             dest: './firefox',
             source: './src',
@@ -127,6 +141,7 @@ module.exports = {
     }
 }
 
+//Remove temporary files
 process.on('exit', () => {
     fs.rm(manifestInfo);
 });

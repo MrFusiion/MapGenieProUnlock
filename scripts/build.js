@@ -6,6 +6,7 @@ console.error = function (...args) {
     console.log('\033[31m', ...args, '\033[0m');
 };
 
+//Parse argv
 let argv;
 try {
     argv = require('./argv_parser')()
@@ -37,6 +38,7 @@ try {
     process.exit(1);
 }
 
+//Write data into a file, Creates the file and directory tree if it doesn't exist
 function writeFile(file, data, options = {}) {
     const dirname = path.dirname(file);
     if (!fs.existsSync(dirname)) {
@@ -48,11 +50,13 @@ function writeFile(file, data, options = {}) {
     fs.writeFileSync(file, data, { flag: "w" });
 }
 
+//Clone a file
 function cloneFile(target, file, options={}) {
     const data = fs.readFileSync(target);
     writeFile(file, data, options);
 }
 
+//Clone dir recursive
 function cloneDir(target, dir, options = {}) {
     if (!fs.existsSync(dir)) {
         if (options.verbose) console.log(`Creating directory: ${dir}`);
@@ -67,6 +71,7 @@ function cloneDir(target, dir, options = {}) {
     }
 }
 
+//Builds the extension with given options { -b: <<browser_name>>, -o: <<output_path>> }
 async function build(options) {
     const builds = require('./builds');
     const actions = builds.actions;
@@ -79,6 +84,7 @@ async function build(options) {
     const dest = path.join(options.output, buildInfo.dest);
     const post_build = buildInfo.post_build;
 
+    //Remove old build if it exist
     if (fs.existsSync(dest)) {
         if (options.verbose) console.log(`Removing directory: ${dest}`);
         fs.rmSync(dest, { recursive: true });
@@ -86,6 +92,8 @@ async function build(options) {
 
     for (let file of files) {
         switch (typeof file) {
+
+            //If it's a string, then it's a path
             case 'string':
                 const exists = fs.existsSync(path.resolve(src, file));
                 if (!exists) console.error(`File not found: ${path.resolve(src, file) }`);
@@ -97,6 +105,8 @@ async function build(options) {
                     cloneFile(path.resolve(src, file), path.resolve(dest, file), options);
                 }
                 continue;
+            
+            //If it's a object, then it's an action
             case 'object':
                 const action = actions[file.action || new Symbol()];
                 if (!action) console.error(`Action not found: ${file.action || 'none'}`);
@@ -104,6 +114,8 @@ async function build(options) {
                 if (!action || !file.file) continue;
 
                 const args = (file.args || []);
+
+                //Execute action with given arguments and store the result
                 let data;
                 try {
                     data = await Promise.resolve().then(() => action(...args));
@@ -112,6 +124,7 @@ async function build(options) {
                     continue;
                 }
 
+                //If we got data then write it to a file
                 if (data) {
                     try {
                         writeFile(path.resolve(dest, file.file), data, options);
@@ -126,6 +139,7 @@ async function build(options) {
         }    
     }
 
+    //If we got a post_build action call it with the output path and command options arguments
     if (post_build) {
         try {
             // console.log("post build");
