@@ -3,7 +3,7 @@ let _defaultSettings, _options;
 //Gets all options
 function getOptions() {
     if (_options) {
-        return _options;
+        return Promise.resolve(_options);
     }
     return fetch(chrome.runtime.getURL("options.json")).then(res => res.json()).then(options => {
         // console.log(options);
@@ -15,7 +15,7 @@ function getOptions() {
 //Gets the default extension settings
 function getDefaultSettings() {
     if (_defaultSettings) {
-        return _defaultSettings;
+        return Promise.resolve(_defaultSettings);
     }
     return getOptions().then(options => {
         const dfltSettings = {};
