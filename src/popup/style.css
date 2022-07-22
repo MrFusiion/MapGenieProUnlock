@@ -305,3 +305,7 @@ h3 {
 .buttons > button:not(:last-child) {
     margin-left: 0px;
 }
+
+#author {
+    cursor: pointer;
+}
