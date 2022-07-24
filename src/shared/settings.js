@@ -1,52 +1,33 @@
-let _defaultSettings, _options;
+const options = Object.freeze(require("../options"));
 
 //Gets all options
 function getOptions() {
-    if (_options) {
-        return Promise.resolve(_options);
-    }
-    return fetch(chrome.runtime.getURL("options.json")).then(res => res.json()).then(options => {
-        // console.log(options);
-        _options = options;
-        return options;
-    });
-}
-
-//Gets the default extension settings
-function getDefaultSettings() {
-    if (_defaultSettings) {
-        return Promise.resolve(_defaultSettings);
-    }
-    return getOptions().then(options => {
-        const dfltSettings = {};
-        for (let option of options) {
-            // console.log(option);
-            dfltSettings[option.name] = option.default;
-        }
-        _defaultSettings = dfltSettings;
-        return dfltSettings;
-    });
+    return options;
 }
 
 //Gets stored extension settings
 function getSettings() {
-    return new Promise((res, rej) => {
+    return new Promise(resolve => {
         chrome.storage.sync.get(["config"], (result) => {
-            let config = result.config || {};
-            getDefaultSettings().then(settings => {
-                config = Object.assign({}, settings, config);
-                // console.log(config, settings);
-                chrome.storage.sync.set({ config });
-                res(config);
-            }).catch(rej);
+            let config = Object.assign({}, ...getOptions().map((option) => ({ [option.name]: option.default })), result.config || {});
+
+            //Cleanup faulty keys
+            for (let key in config) {
+                if (key.match(/^\d+$/)) {
+                    delete config[key];
+                }
+            }
+
+            setSettings(config);
+            resolve(config);
         });
     });
 }
 
+//Sets stored extension settings
 function setSettings(settings) {
-    // console.log("Set settings: ", settings);
     chrome.storage.sync.set({ config: settings });
 }
 
 
-module.exports = { getDefaultSettings, getOptions, getSettings, setSettings };
+module.exports = { getOptions, getSettings, setSettings };

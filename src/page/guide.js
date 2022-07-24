@@ -1,9 +1,8 @@
 const { MGApiFilter } = require("./filters");
 const { MGMap } = require("./map/main");
 
-class MGGuide {
-    #apiFilter
 
+class MGGuide {
     constructor(window) {
         this.map;
         this.document = window.document;
@@ -14,22 +13,29 @@ class MGGuide {
         this.mapFrame.addEventListener("load", () => {
             this._setupMap().then(this.load.bind(this));
         });
+
         this.checkboxes = {};
         for (var checkbox of this.document.querySelectorAll(".check")) {
             this.checkboxes[checkbox.getAttribute("data-location-id")] = checkbox;
         }
 
-        this.#apiFilter = new MGApiFilter(window.axios);
-        this.#apiFilter.set = (key, id, _, str) => {
-            if (key == "locations" && !this.map.store.state.map.locationsById[id]) {
-                this.map.window.axios.put(str);
+        this.apiFilter = new MGApiFilter(window.axios, {
+            put: {
+                locations: (_, id, __, str) => {
+                    if (!this.map.store.state.map.locationsById[id]) {
+                        this.map.window.axios.put(str);
+                    }
+                }
+            },
+
+            delete: {
+                locations: (_, id, __, str) => {
+                    if (this.map.store.state.map.locationsById[id]) {
+                        this.map.window.axios.delete(str);
+                    }
+                }
             }
-        }
-        this.#apiFilter.remove = (key, id, _, str) => {
-            if (key == "locations" && !this.map.store.state.map.locationsById[id]) {
-                this.map.window.axios.delete(str);
-            }
-        }
+        });
     }
 
     async _setupMap() {
@@ -74,9 +80,6 @@ class MGGuide {
 
     _checkboxSetChecked(checkbox, checked) {
         if (checkbox) {
-            // if ((checked || false) != checkbox.checkbox) {
-            //     checkbox.click();
-            // }
             checkbox.checked = checked;
         }
     }

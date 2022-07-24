@@ -6,26 +6,24 @@ function error(message) {
     window.postMessage({ type: "mg:error", message }, "*");
 }
 
-function getStatus(sendResponse) {
-    setTimeout(async () => {
-        await waitForDomLoaded();
-
+function get_status(sendResponse) {
+    waitForDomLoaded().then(() => {
         sendResponse({
-            is_list: isList(),
-            is_map: isMap(),
-            is_guide: isGuide(),
+            is_list:    isList(),
+            is_map:     isMap(),
+            is_guide:   isGuide(),
         });
-    }, 0);
+    });
     return true;
 }
 
-function reloadWindow(sendResponse) {
+function reload_window(sendResponse) {
     window.location.reload();
     sendResponse();
     return true;
 }
 
-function exportMapData(sendResponse) {
+function export_mapdata(sendResponse) {
     let gameid = sessionStorage.getItem("gameid");
     let userid = sessionStorage.getItem("userid");
     if (!gameid || !userid) return;
@@ -54,7 +52,7 @@ function exportMapData(sendResponse) {
     return false;
 }
 
-function importMapData(sendResponse) {
+function import_mapdata(sendResponse) {
     let gameid = sessionStorage.getItem("gameid");
     let userid = sessionStorage.getItem("userid");
     if (!gameid || !userid) return;
@@ -75,7 +73,6 @@ function importMapData(sendResponse) {
             } catch (e) {
                 return error(`Invalid JSON file: ${e}`);
             }
-            // console.log(data);
             if (typeof data !== "object") return error("json has no valid data");
             if (data.gameid !== gameid) return error("json file is not for this game");
             if (data.userid !== userid) return error("json file is not for this user");
@@ -92,7 +89,7 @@ function importMapData(sendResponse) {
     return false;
 }
 
-function clearMapData(sendResponse) {
+function clear_mapdata(sendResponse) {
     let game_title = sessionStorage.getItem("game_title");
     let ans = confirm(`Are you sure you want to clear your map data for game ${game_title}?`);
     if (!ans) return;
@@ -106,4 +103,4 @@ function clearMapData(sendResponse) {
     return false
 }
 
-module.exports = { getStatus, reloadWindow, exportMapData, importMapData, clearMapData };
+module.exports = { get_status, reload_window, export_mapdata, import_mapdata, clear_mapdata };

@@ -33,10 +33,9 @@ function send(action, data, options = { all: false }) {
 }
 
 function setStatus(status) {
-    status = status || {};
     let activeCount = 0;
     for (let $statusElement of $statusElements) {
-        if (status[`is_${$statusElement.attr("id")}`]) {
+        if (status?.[`is_${$statusElement.attr("id")}`]) {
             activeCount++; 
             $statusElement.addClass("active");
         } else {
@@ -114,12 +113,9 @@ $(".mapgenie-button").click(() => {
 $(".close-button").click(window.close.bind(window));
 
 //Add options
-getOptions().then(options => {
-    // console.log("Options: ", options);
-    for (let option of options) {
-        addCheckboxOption(option.name, option.label, option.default, option.tooltip);
-    }
-});
+for (let option of getOptions()) {
+    addCheckboxOption(option.name, option.label, option.default, option.tooltip);
+}
 
 //Add status elements
 addStatus("map");

@@ -29,7 +29,6 @@ class RemoveHandler {
     visible_categories(key) {
         let id = key.match(/(\d+)$/)[1];
         this.storage.updateData(data => {
-            // console.log(data.visible_categories);
             delete data.visible_categories[id];
             return data;
         });
@@ -38,7 +37,6 @@ class RemoveHandler {
 
     remember_categories() {
         this.storage.update(({ settings, data }) => {
-            // console.log(settings, data);
             settings.remember_categories = false;
             for (let key in data.visible_categories) delete data.visible_categories[key];
             return { settings, data };

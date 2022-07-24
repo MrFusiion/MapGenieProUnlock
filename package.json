@@ -1,19 +1,20 @@
 {
   "name": "mg-pro-unlock",
   "title": "Mapgenie PRO unlocker by MrFusiion",
-  "version": "4.3.1",
+  "version": "4.4.0",
   "description": "Chrome extension that unlocks [Map Genie](https://mapgenie.io/) PRO features for free.",
   "author": "MrFusiion",
   "main": "inject.js",
   "scripts": {
-    "build": "node ./scripts/build.js -o ./build",
-    "clean": "node ./scripts/clean.js"
+    "build": "node ./scripts/index.js build",
+    "build-dist": "node ./scripts/index.js build-dist",
+    "clean": "node ./scripts/index.js clean"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MrFusiion/MapGenieProUnlock.git"
   },
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/MrFusiion/MapGenieProUnlock/issues"
   },
@@ -22,7 +23,7 @@
     "archiver": "^5.3.1",
     "browserify": "^17.0.0",
     "dotenv": "^16.0.1",
-    "temp": "^0.9.4",
-    "web-ext": "^6.8.0"
+    "web-ext": "^6.8.0",
+    "yargs": "^17.5.1"
   }
 }

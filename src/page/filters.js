@@ -44,7 +44,6 @@ class MGApiFilter extends Filter {
         return (...args) => {
             const [str, data] = args;
             const key = str.match(/\/api\/v1\/user\/((\/?[A-Za-z]+)+)\/?/)?.[1];
-            console.log("Key: ", key);
             if (key) {
                 let id = parseInt((str.match(/(\d+)$/) || { 1: -1 })[1]);
                 const result = this._handle(handlerName, key, [key, id, data, str]);

@@ -22,6 +22,17 @@ class MGMapMarkEvent extends Event {
 }
 
 
+function toggle(dict, key) {
+    if (dict[key]) {
+        delete dict[key];
+        return false;
+    } else {
+        dict[key] = true;
+        return true;
+    }
+}
+
+
 class MGMap {
     #eventTarget = new EventTarget();
     #categories; #isMini; #storage;
@@ -87,16 +98,12 @@ class MGMap {
         this.popupObserver = new PopupObserver(this.store);
         this.popupObserver.click((e) => {
             const id = e.locId;
-            this.#storage.updateData(data => {
-                if (found && !data.locations[id]) {
-                    data.locations[id] = true;
-                    this.#storage.local.foundLocationsCount += 1;
-                } else if (!found && data.locations[id]) {
-                    delete data.locations[id];
-                    this.#storage.local.foundLocationsCount -= 1;
-                }
+            this.#storage.updateData((data) => {
+                const found = toggle(data.locations, id);
+                this.store.markLocation(id, found);
+                this.#storage.local.foundLocationsCount += found ? 1 : -1;
                 return data;
-            });
+            })
             this._update();
         });
         this.popupObserver.observe(this.window);
@@ -106,18 +113,19 @@ class MGMap {
         // 2 unmarkAll: Unmarks all visible markers
         this.markControls = new MarkControls(this.window);
         this.markControls.click((found) => {
+            //Confirm if the user want's to unmark or mark all visible markers
             let ans = confirm(`Are you sure you want to ${!found && "un" || ""}mark all visible markers on the map?`);
             if (!ans) return;
 
-            let c = 0;
+            //Count how many markers are mark or unmarked
             this.#storage.updateData(data => {
                 for (let loc of this.store.state.map.locations) {
                     if (loc.category.visible) {
                         if (found && !data.locations[loc.id]) {
-                            c++;
+                            this.#storage.local.foundLocationsCount++;
                             data.locations[loc.id] = true;
                         } else if (!found && data.locations[loc.id]) {
-                            c--;
+                            this.#storage.local.foundLocationsCount--;
                             delete data.locations[loc.id];
                         }
                         this.store.markLocation(loc.id, found);
@@ -125,7 +133,6 @@ class MGMap {
                 }
                 return data;
             });
-            this.#storage.local.foundLocationsCount += c;
             this._update();
         });
     }
@@ -152,23 +159,21 @@ class MGMap {
         }
     }
 
-    _toggleLocation(id) {
-        const found = !this.store.isMarked(id);
-        this.store.markLocation(id, found);
-
-    }
-
     _update() {
+        //We don't have to update the UI if the map is in mini mode
+        if (this.#isMini) return;
+
         const count = this.#storage.local.foundLocationsCount;
         const total = this.window.mapData.totalLocations
             || (this.window.mapData.totalLocations = Object.keys(this.store.state.map.locations).length);
         
+        
         //Update totalProress and togglefound counter
-        this?.totalProgress.update(count, total);
-        this?.toggleFound.update(count);
+        this.totalProgress.update(count, total);
+        this.toggleFound.update(count);
 
         //Update mapManager
-        this.window.mapManager.updateFoundLocationsStyle();
+        this.window.mapManager.updateFoundLocationsStyle?.();
 
         //Update popup
         const popup = this.popupObserver.currentPopup;
@@ -191,10 +196,15 @@ class MGMap {
     }
 
     init() {
+        //Get initial locations and categories
         const visibleLocations = this.window.visibleLocations;
         const visibleCategories = this.window.visibleCategories;
+
+        //Do react update
         this.store.toggleCategories([]); // Force react update
         this.store.updateFoundLocationsCount(0); // Force react update
+
+        //Load map data then restore initial locations and categories
         return this.load().then(() => {
             if (visibleLocations || visibleCategories) {
                 this.window.mapManager.applyFilter({
@@ -207,8 +217,12 @@ class MGMap {
 
     load() {
         return new Promise((resolve) => {
+            //Retrieve localstorage data
             this.#storage.load();
-            if (this.window.map.loaded()) resolve();
+
+            //Wait until map is loaded the resolve
+            if (this.window.map.loaded())
+                resolve();
             else {
                 let handle = setInterval(() => {
                     if (this.window.map.loaded()) {
@@ -218,17 +232,27 @@ class MGMap {
                 }, 50);
             }
         }).then(() => {
+            //Unmark all non-stored locations
             this.store.markLocations(false);
+
+            //Mark all stored locations
             for (let loc in this.#storage.data.locations) {
                 this.store.markLocation(loc, true);
             }
 
+            //Only do this if the map is not in mini mode
             if (!this.#isMini) {
+
+                //Untrack all non-stored categories
                 this.store.trackCategories(false);
+
+                //Track all stored categores
                 for (let cat in this.#storage.data.categories) {
                     this.store.trackCategory(cat, true);
                 }
 
+
+                //If remember categories is true load last visible categories
                 if (this.#storage.settings.remember_categories) {
                     this.#storage.autosave = false;
                     let visibleCategories = Object.assign({}, this.#storage.data.visible_categories);
@@ -240,6 +264,7 @@ class MGMap {
                     this.setRememberCategories(false);
                 }
 
+                //Remove non-stored presets except for the default one;
                 let curPresets = this.store.state.user.presets;
                 let presets = Object.values(this.#storage.data.presets);
                 if (curPresets[0]) {
@@ -249,14 +274,18 @@ class MGMap {
                     this.store.addPreset(curPresets[0]);
                 }
 
+                //Add stored presets
                 for (let preset of presets) {
                     this.store.addPreset(preset);
                 }
+
+                //Order presets
                 if (this.#storage.data.presets_order.length > 0) {
                     this.store.reorderPresets(this.#storage.data.presets_order);
                 }
             }
 
+            //Update map
             this._update();
         });
     }

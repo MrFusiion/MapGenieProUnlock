@@ -80,7 +80,6 @@ class MGMapStore {
     }
 
     showSpecificLocations(locations = [], categories = []) {
-        console.log(locations.map(id => parseInt(id)), categories.map(id => parseInt(id)));
         this._dispatch("HIVE:MAP:SHOW_SPECIFIC_LOCATIONS", {
             locationIds: locations.map(id => parseInt(id)),
             categoryIds: categories.map(id => parseInt(id))

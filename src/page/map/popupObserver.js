@@ -16,13 +16,14 @@ class Popup {
 
         this.input = this.button.querySelector("input[type='checkbox']");
         this.locId = locId;
+        this.found = this.input.checked;
     }
 
     click(f) {
         return this.button?.addEventListener("click", f);
     }
 
-    update(marked) {
+    update(marked) { 
         if (this.input) {
             this.input.checked = marked;
         }
