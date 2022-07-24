@@ -1,164 +1,115 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const pfs = fs.promises;
+const path = require("path");
+const browserify = require("browserify");
 
-// CLI make error messages red
-console.error = function (...args) {
-    console.log('\033[31m', ...args, '\033[0m');
-};
-
-//Parse argv
-let argv;
-try {
-    argv = require('./argv_parser')()
-        .addOption({
-            name: 'browser',
-            aliases: ['b'],
-            default: 'chrome'
-        }).addOption({
-            name: 'output',
-            aliases: ['o'],
-            default: './build'
-        }).addOption({
-            name: 'verbose',
-            aliases: ['v'],
-            flag: true
-        }).addOption({
-            name: 'api-key',
-        }).addOption({
-            name: 'api-secret',
-        }).addOption({
-            name: 'debug',
-            aliases: ['d'],
-            flag: true
-        })
-        .help()
-        .parse();
-} catch (e) {
-    console.error(e);
-    process.exit(1);
-}
+const pjson = require("../package.json");
+const buildInfo = require("../build.config");
 
 //Write data into a file, Creates the file and directory tree if it doesn't exist
-function writeFile(file, data, options = {}) {
-    const dirname = path.dirname(file);
-    if (!fs.existsSync(dirname)) {
-        if (options.verbose) console.log(`Creating directory: ${dirname}`);
-        fs.mkdirSync(dirname, { recursive: true });
-    }
-
-    if (options.verbose) console.log(`Writing file: ${file}`);
-    fs.writeFileSync(file, data, { flag: "w" });
+function writeFile(file, data) {
+    return makeDir(path.dirname(file)).then(() => {
+        return pfs.writeFile(file, data, { flag: "w" });
+    }).then(() => {
+        return file;
+    });
 }
 
 //Clone a file
-function cloneFile(target, file, options={}) {
-    const data = fs.readFileSync(target);
-    writeFile(file, data, options);
+function cloneFile(target, file) {
+    return pfs.readFile(target).then((data) => {
+        return writeFile(file, data);
+    });
 }
 
 //Clone dir recursive
-function cloneDir(target, dir, options = {}) {
-    if (!fs.existsSync(dir)) {
-        if (options.verbose) console.log(`Creating directory: ${dir}`);
-        fs.mkdirSync(dir, { recursive: true });
-    }
-    for (let file of fs.readdirSync(target)) {
-        if (fs.statSync(path.join(target, file)).isDirectory()) {
-            cloneDir(path.join(target, file), path.join(dir, file), options);
-        } else {
-            cloneFile(path.join(target, file), path.join(dir, file), options);
-        }
-    }
-}
+function cloneDir(target, dir) {
+    return makeDir(dir).then(() => {
+        return pfs.readdir(target)
+    }).then((files) => {
+        return Promise.all(files.map((file) => {
+            const srcFile = path.resolve(target, file);
+            const destFile = path.resolve(dir, file);
 
-//Builds the extension with given options { -b: <<browser_name>>, -o: <<output_path>> }
-async function build(options) {
-    const builds = require('./builds');
-    const actions = builds.actions;
-    const buildInfo = builds.browsers[options.browser];
-    if (!buildInfo) throw new Error(`Unknown browser: ${options.browser}`);
-
-    const manifest = buildInfo.manifest
-    const files = [...buildInfo.files, manifest];
-    const src = buildInfo.source;
-    const dest = path.join(options.output, buildInfo.dest);
-    const post_build = buildInfo.post_build;
-
-    //Remove old build if it exist
-    if (fs.existsSync(dest)) {
-        if (options.verbose) console.log(`Removing directory: ${dest}`);
-        fs.rmSync(dest, { recursive: true });
-    }
-
-    for (let file of files) {
-        switch (typeof file) {
-
-            //If it's a string, then it's a path
-            case 'string':
-                const exists = fs.existsSync(path.resolve(src, file));
-                if (!exists) console.error(`File not found: ${path.resolve(src, file) }`);
-                if (!exists) continue;
-
-                if (fs.statSync(path.resolve(src, file)).isDirectory()) {
-                    cloneDir(path.resolve(src, file), path.resolve(dest, file), options);
-                } else {
-                    cloneFile(path.resolve(src, file), path.resolve(dest, file), options);
+            return pfs.stat(srcFile).then((stats) => {
+                if (stats.isDirectory()) {
+                    return cloneDir(srcFile, destFile);
                 }
-                continue;
-            
-            //If it's a object, then it's an action
-            case 'object':
-                const action = actions[file.action || new Symbol()];
-                if (!action) console.error(`Action not found: ${file.action || 'none'}`);
-                if (!file.file) console.error(`No file given! ${JSON.stringify(file)}`);
-                if (!action || !file.file) continue;
-
-                const args = (file.args || []);
-
-                //Execute action with given arguments and store the result
-                let data;
-                try {
-                    data = await Promise.resolve().then(() => action(...args));
-                } catch (e) {
-                    console.error('Action failed:', e);
-                    continue;
-                }
-
-                //If we got data then write it to a file
-                if (data) {
-                    try {
-                        writeFile(path.resolve(dest, file.file), data, options);
-                    } catch (e) {
-                        console.error(`Writing file ${path.resolve(dest, file.file)} failed:`, e);
-                    }
-                } else {
-                    console.error(`Action ${file.action}(${args.join(', ')}) did not return data!`);
-                }
-
-                continue;
-        }    
-    }
-
-    //If we got a post_build action call it with the output path and command options arguments
-    if (post_build) {
-        try {
-            // console.log("post build");
-            post_build(dest, options);
-        } catch (e) {
-            console.error("Post-build failed:", e);
-        }
-    }
-
-    return dest;
-}
-
-if (require.main === module) {
-    const options = argv.getOptions()
-    const browser = options.browser;
-    console.log(`Building ${browser} extension...`)
-    build(options).then(() => {
-        console.log(`${browser.replace(/^./, (l) => String.prototype.toUpperCase.call(l))} extension built`);
+                return cloneFile(srcFile, destFile);
+            })
+        })).then(() => dir);
     });
+}
+
+//Bundles .js scripts with require into one script
+function bundleScript(target, file) {
+    return makeDir(path.dirname(file)).then(() => {
+        return new Promise((resolve) => {
+            browserify()
+                .add(target)
+                .bundle()
+                .pipe(fs.createWriteStream(file, { flag: "w" }))
+                .on("close", () => {
+                    resolve(file);
+                });
+        });
+    });
+}
+
+function makeDir(dir) {
+    return Promise.resolve().then(() => {
+        return pfs.mkdir(dir, { recursive: true });
+    }).then(() => dir);
+}
+
+//Remove dir if it exists
+function removeDirSync(dir) {
+    if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true }, (err) => {
+            if (err) throw err;
+        });
+    }
+}
+
+async function build(argv) {
+    //Remove old build folder
+    removeDirSync(argv["build-dir"]);
+
+    const manifestData = Object.assign({}, {
+        name: pjson.title,
+        version: pjson.version,
+        version_name: pjson.version,
+        description: pjson.description,
+        author: pjson.author,
+    }, require(path.resolve(argv["source-dir"], "manifest.json")));
+
+    return Promise.all([
+        ...buildInfo.map(({ src, dest, bundle = false }) => {
+            const srcFile = path.resolve(argv["source-dir"], src);
+            const destFile = path.resolve(argv["build-dir"], dest);
+
+            return pfs.stat(srcFile).then((stats) => {
+                if (stats.isDirectory()) {
+                    return cloneDir(srcFile, destFile);
+                } else if (stats.isFile()) {
+                    if (bundle) {
+                        return bundleScript(srcFile, destFile);
+                    }
+                    return cloneFile(srcFile, destFile);
+                } else {
+                    throw new Error("Huh, how did we get here?");
+                }
+            });
+        }),
+        writeFile(path.resolve(argv["build-dir"], "manifest.json"), JSON.stringify(manifestData, null, 2))
+    ]).then((result) => {
+        // console.log("Done", result);
+        return argv["build-dir"];
+    });
+}
+
+if (require.main == module) {
+    build({ "source-dir": "src", "build-dir": "build" });
 }
 
 module.exports = build;

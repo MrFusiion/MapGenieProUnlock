@@ -17,6 +17,8 @@
         }
     ],
     "web_accessible_resources": [
+        "main.js",
+
         "page.js",
         "page.css",
         "data.js",
@@ -30,5 +32,10 @@
         "32": "/images/mapgenie_pro_32.png",
         "64": "/images/mapgenie_pro_64.png",
         "128": "/images/mapgenie_pro_128.png"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "mapgenie@pro.com"
+        }
     }
 }
