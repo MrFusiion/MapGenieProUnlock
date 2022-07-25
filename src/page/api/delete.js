@@ -29,7 +29,7 @@ class ApiDeleteHandler {
 
     categories(_, id) {
         this.storage.updateData(data => {
-            delete data[key][id];
+            delete data.categories[id];
             return data;
         });
         this._dispatch("categories", { id });

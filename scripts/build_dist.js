@@ -27,7 +27,7 @@ function format(str, ...args) {
     return str;
 };
 
-function zip(path, dest) {
+function zip(file, dest) {
     const out = fs.createWriteStream(dest);
     const zip = archiver("zip");
 
@@ -37,10 +37,10 @@ function zip(path, dest) {
 
     zip.pipe(out);
     
-    if (fs.statSync(path).isDirectory()) {
-        zip.directory(path, false);
+    if (fs.statSync(file).isDirectory()) {
+        zip.directory(file, false);
     } else {
-        zip.append(fs.createReadStream(path), { name: path.basename(path) });
+        zip.append(fs.createReadStream(file), { name: path.basename(file) });
     }
 
     return zip.finalize();
@@ -70,7 +70,7 @@ async function buildDistForFirefox(argv) {
         overwriteDest: true,
         filename: filename(DEBUG_FILENAME, "firefox"),
     }).then((result) => {
-        const file = result.downloadedFiles?.[1];
+        const file = result.downloadedFiles?.[0];
         if (file) {
             zip(file, dest).then(() => {
                 fs.rmSync(file);

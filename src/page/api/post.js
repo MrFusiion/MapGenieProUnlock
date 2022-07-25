@@ -39,7 +39,7 @@ class ApiPostHandler {
     categories(_, id, postData) {
         id = postData?.category || id;
         this.storage.updateData(data => {
-            data[key][id] = true;
+            data.categories[id] = true;
             return data;
         });
         this._dispatch("categories", { id });
