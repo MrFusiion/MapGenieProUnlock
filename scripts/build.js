@@ -71,14 +71,14 @@ function removeDirSync(dir) {
     }
 }
 
-async function build(argv) {
+async function build(argv, debug) {
     //Remove old build folder
     removeDirSync(argv["build-dir"]);
 
     const manifestData = Object.assign({}, {
         name: pjson.title,
         version: pjson.version,
-        version_name: pjson.version,
+        version_name: `${pjson.version}${debug && "-debug" || ""}`,
         description: pjson.description,
         author: pjson.author,
     }, require(path.resolve(argv["source-dir"], "manifest.json")));

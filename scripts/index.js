@@ -14,6 +14,15 @@ yargs(process.argv.slice(2))
             });
     }, (argv) => {
         require("./clean")(argv);
+    }).command("watch", false, yargs => {
+        return yargs
+            .option("build-timeout", {
+                alias: "t",
+                default: 1000,
+                description: "Delay between builds."
+            });
+    }, (argv) => {
+        require("./watch")(argv);
     })
     .options({
         "browser": {

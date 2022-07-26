@@ -8,7 +8,8 @@
   "scripts": {
     "build": "node ./scripts/index.js build",
     "build-dist": "node ./scripts/index.js build-dist",
-    "clean": "node ./scripts/index.js clean"
+    "clean": "node ./scripts/index.js clean",
+    "watch": "node ./scripts/index.js watch"
   },
   "repository": {
     "type": "git",

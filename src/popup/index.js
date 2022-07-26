@@ -128,7 +128,7 @@ assignButton("button#import", "import_mapdata");
 assignButton("button#clear", "clear_mapdata");
 
 //Set extension info at the footer
-$("#version").text(`v${chrome.runtime.getManifest().version}`);
+$("#version").text(`v${chrome.runtime.getManifest().version_name}`);
 $("#author").text(`by ${chrome.runtime.getManifest().author || "me"}`);
 $("#author").click(() => {
     chrome.tabs.create({ url: "https://github.com/MrFusiion/MapGenieProUnlock" });

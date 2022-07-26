@@ -41,5 +41,9 @@ module.exports = [
     {
         "src": "popup/css",
         "dest": "popup/css"
+    },
+    {
+        "src": "background.js",
+        "dest": "background.js"
     }
 ];

@@ -7,6 +7,9 @@
         "storage",
         "tabs"
     ],
+    "background": {
+        "scripts": ["background.js"]
+    },
     "content_scripts": [
         {
             "js": ["main.js"],
